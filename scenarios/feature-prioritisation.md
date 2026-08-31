@@ -25,3 +25,39 @@ Per-persona ordering · the features with opposite orderings across personas, na
 the feature everyone was indifferent to, which is the one to cut.
 
 To score this scenario, author anchors and clear the two-run gate in `ssr/validate.md` first.
+
+## Machine-readable
+
+The orchestrator reads this block. The prose above is for you.
+
+```json
+{
+ "scenario": "feature-prioritisation",
+ "instrument": "panel",
+ "anchors": null,
+ "anchor_state": "none",
+ "per_item": "feature",
+ "verdicts": [
+  "would use",
+  "indifferent",
+  "would not use"
+ ],
+ "axes": [
+  {
+   "key": "would_use",
+   "question": "Would you use this, in a normal week? Describe the week.",
+   "rated": false
+  },
+  {
+   "key": "would_pay_more",
+   "question": "Would you pay more to have it?",
+   "rated": false
+  },
+  {
+   "key": "would_miss_it",
+   "question": "Would you notice if it disappeared tomorrow?",
+   "rated": false
+  }
+ ]
+}
+```

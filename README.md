@@ -2,8 +2,17 @@
 
 **A synthetic buyer panel that argues with your work before the market does.**
 
-> The public README for this repo is written and waiting on a copy pass. It ships verbatim in its place.
-> Until then: read `AGENTS.md` for the protocol and `docs/rules.md` for the four rules that are absolute.
+> The public README is written and waiting on a copy pass; it ships verbatim in place of this note.
+> Meanwhile the repo is complete and runs: start at [`docs/quickstart.md`](docs/quickstart.md).
 
-Method: **arXiv:2510.08338** (PyMC Labs and Colgate-Palmolive) for how free-text answers become ratings ·
+**No API key needed.** Personas run through the agent CLI you are already logged into. One optional
+feature — turning their answers into 1–5 distributions — needs an embedding provider, and without it you
+still get verdicts, objections and the disagreement map. Details in
+[`docs/quickstart.md`](docs/quickstart.md).
+
+- [`AGENTS.md`](AGENTS.md) — the protocol your agent follows
+- [`docs/rules.md`](docs/rules.md) — four rules that are absolute
+- [`docs/anchors.md`](docs/anchors.md) — read before editing an anchor set
+
+Method: **arXiv:2510.08338** (PyMC Labs and Colgate-Palmolive) for turning free text into ratings ·
 **arXiv:2406.20094** (Tencent AI Lab) for how personas are constructed. MIT licensed.

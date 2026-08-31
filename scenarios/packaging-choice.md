@@ -31,3 +31,39 @@ you did.
 ## Return
 
 Forced ranking with counts · the drift note per persona, verbatim · the variant that splits the panel.
+
+## Machine-readable
+
+The orchestrator reads this block. The prose above is for you.
+
+```json
+{
+ "scenario": "packaging-choice",
+ "instrument": "panel",
+ "anchors": null,
+ "anchor_state": "none",
+ "per_item": "option",
+ "verdicts": [
+  "would pick this",
+  "would shortlist",
+  "would pick none"
+ ],
+ "axes": [
+  {
+   "key": "would_pick",
+   "question": "Which of these would you choose \u2014 and would you choose any of them?",
+   "rated": false
+  },
+  {
+   "key": "would_shortlist",
+   "question": "Would this survive to a shortlist you would show someone else?",
+   "rated": false
+  },
+  {
+   "key": "drift_note",
+   "question": "What did you think this was for?",
+   "rated": false
+  }
+ ]
+}
+```

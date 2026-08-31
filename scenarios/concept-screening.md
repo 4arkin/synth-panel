@@ -29,3 +29,39 @@ response, and the ranking you came for disappears into it.
 `anchors/anchors-concept-screening.json`. `jtbd_fit` and `would_pay` are validated and generic — they
 carry no stimulus vocabulary, so they transfer to your concepts unchanged. `would_switch` has no
 validated set; do not invent one to make the output look complete.
+
+## Machine-readable
+
+The orchestrator reads this block. The prose above is for you.
+
+```json
+{
+ "scenario": "concept-screening",
+ "instrument": "panel",
+ "anchors": "anchors-concept-screening.json",
+ "anchor_state": "validated",
+ "per_item": "concept",
+ "verdicts": [
+  "would use it",
+  "curious",
+  "not for me"
+ ],
+ "axes": [
+  {
+   "key": "jtbd_fit",
+   "question": "Does this map to a job you are actively trying to do?",
+   "rated": true
+  },
+  {
+   "key": "would_pay",
+   "question": "Would you exchange money for this at the implied tier?",
+   "rated": true
+  },
+  {
+   "key": "would_switch",
+   "question": "Would you drop what you use today for it, and what would you have to stop doing?",
+   "rated": false
+  }
+ ]
+}
+```

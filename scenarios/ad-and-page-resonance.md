@@ -24,3 +24,44 @@ least stable of the sets that passed. Treat its distributions as coarser than th
 ## Return
 
 Variants ranked · the stopped-at line per persona, verbatim · what they thought was being sold.
+
+## Machine-readable
+
+The orchestrator reads this block. The prose above is for you.
+
+```json
+{
+ "scenario": "ad-and-page-resonance",
+ "instrument": "panel",
+ "anchors": "anchors-ad-and-page-resonance.json",
+ "anchor_state": "validated",
+ "per_item": "variant",
+ "verdicts": [
+  "would act",
+  "would keep reading",
+  "would scroll past"
+ ],
+ "axes": [
+  {
+   "key": "would_keep_reading",
+   "question": "How far would you read before stopping?",
+   "rated": true
+  },
+  {
+   "key": "would_act",
+   "question": "Would you click, reply, or message the author?",
+   "rated": true
+  },
+  {
+   "key": "would_trust",
+   "question": "Would you believe this enough to act on it?",
+   "rated": false
+  },
+  {
+   "key": "stopped_at",
+   "question": "Quote the exact line where you stopped, or would have.",
+   "rated": false
+  }
+ ]
+}
+```

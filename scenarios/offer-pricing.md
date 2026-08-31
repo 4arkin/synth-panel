@@ -31,3 +31,49 @@ A filled set is derived, not validated. Say so in the output.
 ## Return
 
 Framings ranked · the axis that kills it · where stance flips as price moves · the objection nobody said.
+
+## Machine-readable
+
+The orchestrator reads this block. The prose above is for you.
+
+```json
+{
+ "scenario": "offer-pricing",
+ "instrument": "panel",
+ "anchors": "anchors-offer-pricing.json",
+ "anchor_state": "templated",
+ "per_item": "framing",
+ "verdicts": [
+  "yes",
+  "partial",
+  "no"
+ ],
+ "axes": [
+  {
+   "key": "dream_outcome",
+   "question": "Is the promised outcome something you actually want?",
+   "rated": true
+  },
+  {
+   "key": "believability",
+   "question": "Do you believe it can be delivered as described?",
+   "rated": true
+  },
+  {
+   "key": "time_tolerance",
+   "question": "Does the timeline work for you?",
+   "rated": true
+  },
+  {
+   "key": "effort_acceptance",
+   "question": "Is what it asks of you beyond money acceptable?",
+   "rated": true
+  },
+  {
+   "key": "would_pay_at_price",
+   "question": "Would you pay this price for this?",
+   "rated": false
+  }
+ ]
+}
+```

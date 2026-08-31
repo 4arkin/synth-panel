@@ -25,7 +25,11 @@ puts mass at both ends and the mean lands in the middle, describing a position n
 Measured 2026-08-18: 6 of 20 axis-cells split this way on the first live run. When that happens
 `expected` is null and the two modes are reported instead. The mean of a bimodal PMF is not a reading.
 """
-import os, sys, json, math, urllib.request
+import os, sys, json, math, urllib.error, urllib.request
+
+class EmbeddingError(RuntimeError):
+    """The provider failed. Never a reason to guess a number instead."""
+
 
 TAU = 0.5   # softmax temperature over z-scored similarities
 TAIL = 0.25  # min mass at BOTH ends before a distribution counts as bimodal
@@ -45,8 +49,20 @@ def embed(texts, model=MODEL, endpoint=ENDPOINT):
         endpoint,
         data=json.dumps({"model": model, "input": texts}).encode(),
         headers=headers)
-    with urllib.request.urlopen(req, timeout=120) as r:
-        d = json.load(r)
+    try:
+        with urllib.request.urlopen(req, timeout=120) as r:
+            d = json.load(r)
+    except urllib.error.HTTPError as exc:
+        detail = exc.read().decode("utf-8", "replace")[:300]
+        raise EmbeddingError(
+            "Embedding provider returned HTTP {} from {}.\n{}\n"
+            "Nothing is broken in the panel itself — rerun without rating, or fix the "
+            "provider. The qualitative output is most of the value.".format(
+                exc.code, endpoint, detail)) from None
+    except urllib.error.URLError as exc:
+        raise EmbeddingError(
+            "Could not reach the embedding provider at {} ({}).".format(endpoint, exc.reason)
+        ) from None
     return [e["embedding"] for e in sorted(d["data"], key=lambda x: x["index"])]
 
 def cos(a, b):
@@ -93,5 +109,9 @@ def rate(responses, anchors):
 
 if __name__ == "__main__":
     anchors = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), sys.argv[1])))
-    json.dump(rate(json.load(sys.stdin), anchors), sys.stdout, indent=1)
+    try:
+        json.dump(rate(json.load(sys.stdin), anchors), sys.stdout, indent=1)
+    except EmbeddingError as exc:
+        print(exc, file=sys.stderr)
+        sys.exit(1)
     print()

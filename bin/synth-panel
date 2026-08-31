@@ -9,10 +9,11 @@ import argparse
 import json
 import os
 import sys
+import time
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from synthpanel import config, detect, dispatch  # noqa: E402
+from synthpanel import compose, config, detect, dispatch, personas, prompt  # noqa: E402
 
 PROBE = ('Reply with nothing but this, in a fenced json block: '
          '{"ok": true}')
@@ -108,12 +109,213 @@ def cmd_run(args):
     return 0
 
 
+def cmd_personas(args):
+    directory, is_example = personas.pool_dir(use_examples=args.examples)
+    pool = personas.load_dir(directory)
+    if not pool:
+        print("No personas. Build them first — see docs/generator.md and AGENTS.md step 2.")
+        print("To see the shape one takes: synth-panel personas --examples")
+        return 1
+    if is_example:
+        print("Using the WORKED EXAMPLE in examples/personas/ — personas/ is empty.")
+        print("These are somebody else's buyers. They will produce a confident,")
+        print("articulate reading of a business that is not yours. Build your own.\n")
+    for p in pool:
+        flag = "skeptic" if p["is_skeptic"] else "       "
+        broken = "  MISSING: " + ", ".join(p["missing"]) if p["missing"] else ""
+        print("  {:<28} {:<10} {}/10  {}{}".format(
+            p["slug"], p.get("cluster", "?"), p["skepticism"], flag, broken))
+    print("\n{} personas · {} skeptics · {} roles · fidelity: {}".format(
+        len(pool), sum(p["is_skeptic"] for p in pool),
+        len({p.get("cluster") for p in pool}), personas.fidelity(pool)))
+    if not any(p["is_skeptic"] for p in pool):
+        print("\nWARNING: no skeptic in the pool. A panel that cannot say no has told")
+        print("you nothing when it says yes.")
+    return 0
+
+
+def cmd_panel(args):
+    cfg = config.load()
+    try:
+        spec = prompt.scenario(args.scenario)
+    except (FileNotFoundError, ValueError) as exc:
+        print(exc, file=sys.stderr)
+        return 2
+
+    directory, is_example = personas.pool_dir(use_examples=args.examples)
+    pool = personas.load_dir(directory)
+    if not pool:
+        print("No personas in personas/. Build them first — AGENTS.md step 2.", file=sys.stderr)
+        print("There is no default panel on purpose: a persona built from somebody", file=sys.stderr)
+        print("else's business tells you nothing about yours.", file=sys.stderr)
+        return 1
+    broken = [p for p in pool if p["missing"]]
+    if broken:
+        for p in broken:
+            print("persona {} is missing: {}".format(p["slug"], ", ".join(p["missing"])),
+                  file=sys.stderr)
+        return 1
+
+    with open(args.stimulus, encoding="utf-8") as fh:
+        stimulus = fh.read().strip()
+
+    roster, notes = compose.compose(
+        pool, size=args.size, include=args.include or (), exclude=args.exclude or (),
+        record=not args.dry_run)
+    prompts = prompt.build_all(roster, spec, stimulus)
+
+    rated = [a["key"] for a in spec["axes"] if a["rated"]]
+    embedding = cfg.get("embedding", {})
+    has_embedding = bool(embedding.get("endpoint") and embedding.get("model"))
+    if not rated or spec["anchor_state"] == "none":
+        mode = "qualitative (no validated anchors ship for this scenario)"
+    elif not has_embedding:
+        mode = "qualitative (no embedding provider configured)"
+    elif spec["anchor_state"] == "templated":
+        mode = "SSR — anchors TEMPLATED, fill them from the stimulus; derived, not validated"
+    else:
+        mode = "SSR ({}, validated anchors)".format(args.scenario)
+
+    state = "Panel: {} personas · fidelity: {} · rating: {}".format(
+        len(roster), personas.fidelity(roster), mode)
+    print(state, file=sys.stderr)
+    print("Roster: " + ", ".join(p["slug"] for p in roster), file=sys.stderr)
+    if is_example:
+        print("SOURCE: examples/personas — this is a worked example, not your buyers.",
+              file=sys.stderr)
+    for note in notes:
+        print("note: " + note, file=sys.stderr)
+
+    if args.dry_run:
+        json.dump({"state": state, "roster": [p["slug"] for p in roster],
+                   "prompts": prompts}, sys.stdout, indent=1, ensure_ascii=False)
+        print()
+        return 0
+
+    results = dispatch.run_all(
+        cfg["dispatch"]["command"], prompts,
+        max_parallel=cfg["dispatch"].get("max_parallel", 5),
+        timeout=args.timeout or cfg["dispatch"].get("timeout_seconds", 420))
+
+    run_dir = os.path.join(config.ROOT, "runs", time.strftime("%Y%m%d-%H%M%S"))
+    os.makedirs(run_dir, exist_ok=True)
+    workers = {}
+    for slug, result in results.items():
+        parsed = dispatch.extract_json(result["stdout"])
+        workers[slug] = {"ok": result["ok"], "seconds": result["seconds"],
+                         "parsed": parsed, "raw": result["stdout"]}
+        with open(os.path.join(run_dir, slug + ".txt"), "w", encoding="utf-8") as fh:
+            fh.write(result["stdout"])
+
+    payload = {"state": state, "scenario": args.scenario,
+               "anchor_state": spec["anchor_state"], "anchors": spec["anchors"],
+               "rated_axes": rated, "fidelity": personas.fidelity(roster),
+               "example_pool": is_example, "notes": notes,
+               "run_dir": os.path.relpath(run_dir, config.ROOT), "workers": workers}
+    with open(os.path.join(run_dir, "run.json"), "w", encoding="utf-8") as fh:
+        json.dump(payload, fh, indent=1, ensure_ascii=False)
+    json.dump(payload, sys.stdout, indent=1, ensure_ascii=False)
+    print()
+
+    failed = [s for s, w in workers.items() if not w["ok"] or w["parsed"] is None]
+    if failed:
+        print("unparsed or failed: {}".format(", ".join(sorted(failed))), file=sys.stderr)
+    return 0
+
+
+def cmd_rate(args):
+    """Turn a finished run's prose into distributions. Optional by design."""
+    cfg = config.load()
+    embedding = cfg.get("embedding", {})
+    if not (embedding.get("endpoint") and embedding.get("model")):
+        print("No embedding provider in config.toml. Nothing to do — the run you", file=sys.stderr)
+        print("already have is the qualitative output, and it is most of the value.", file=sys.stderr)
+        return 1
+
+    run_path = os.path.join(args.run_dir, "run.json")
+    with open(run_path, encoding="utf-8") as fh:
+        payload = json.load(fh)
+    if not payload.get("anchors"):
+        print("Scenario '{}' ships no anchors — it is qualitative by design.".format(
+            payload["scenario"]), file=sys.stderr)
+        return 1
+
+    anchor_path = os.path.join(config.ROOT, "anchors", payload["anchors"])
+    with open(anchor_path, encoding="utf-8") as fh:
+        raw = fh.read()
+    if "{{" in raw and not args.force:
+        print("{} still has unfilled placeholders.".format(payload["anchors"]), file=sys.stderr)
+        print("Fill them from the stimulus, in the stimulus's own words, identically", file=sys.stderr)
+        print("across all five statements of an axis. An anchor set whose top end echoes", file=sys.stderr)
+        print("the stimulus while its bottom end does not will score skeptics as", file=sys.stderr)
+        print("enthusiasts — measured, not theoretical. See docs/anchors.md.", file=sys.stderr)
+        return 1
+    anchors = {k: v for k, v in json.loads(raw).items() if not k.startswith("_")}
+
+    os.environ.setdefault("SSR_EMBED_ENDPOINT", embedding["endpoint"])
+    os.environ.setdefault("SSR_EMBED_MODEL", embedding["model"])
+    os.environ.setdefault("SSR_EMBED_KEY_ENV", embedding.get("api_key_env", "OPENAI_API_KEY"))
+    sys.path.insert(0, os.path.join(config.ROOT, "ssr"))
+    import importlib
+    rate_mod = importlib.import_module("rate")
+
+    bimodal = []
+    try:
+        _rate_workers(rate_mod, payload, anchors, bimodal)
+    except rate_mod.EmbeddingError as exc:
+        print(exc, file=sys.stderr)
+        return 1
+    payload["rating_mode"] = "SSR ({}, {} anchors)".format(
+        payload["anchors"], payload["anchor_state"])
+    with open(run_path, "w", encoding="utf-8") as fh:
+        json.dump(payload, fh, indent=1, ensure_ascii=False)
+    json.dump(payload, sys.stdout, indent=1, ensure_ascii=False)
+    print()
+
+    if payload["anchor_state"] == "templated":
+        print("\nThese anchors are DERIVED from a validated set, not validated themselves.",
+              file=sys.stderr)
+        print("Say so when you report the distributions.", file=sys.stderr)
+    for slug, axis in bimodal:
+        print("bimodal: {}.{} — expected is null on purpose. Report both modes in "
+              "words; the mean of a split distribution is not a reading.".format(slug, axis),
+              file=sys.stderr)
+    return 0
+
+
+def _rate_workers(rate_mod, payload, anchors, bimodal):
+    for slug, worker in payload["workers"].items():
+        axes = (worker.get("parsed") or {}).get("axes") or {}
+        prose = {k: v for k, v in axes.items() if k in anchors and isinstance(v, str)}
+        if not prose:
+            continue
+        worker["ratings"] = rate_mod.rate(prose, anchors)
+        for axis, result in worker["ratings"].items():
+            if result["bimodal"]:
+                bimodal.append((slug, axis))
+
+
 def main():
     parser = argparse.ArgumentParser(prog="synth-panel", description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = parser.add_subparsers(dest="cmd", required=True)
 
     sub.add_parser("detect", help="find agent CLIs on PATH and write their entrypoint files")
+
+    plist = sub.add_parser("personas", help="list and validate the persona pool")
+    plist.add_argument("--examples", action="store_true", help="show the worked example pool")
+
+    panel = sub.add_parser("panel", help="compose, assemble and dispatch a full panel")
+    panel.add_argument("--scenario", required=True)
+    panel.add_argument("--stimulus", required=True, help="file holding what the panel judges")
+    panel.add_argument("--size", type=int, default=None)
+    panel.add_argument("--include", action="append", help="force a persona in (repeatable)")
+    panel.add_argument("--exclude", action="append", help="keep a persona out (repeatable)")
+    panel.add_argument("--examples", action="store_true",
+                       help="run against the worked example pool instead of your own")
+    panel.add_argument("--dry-run", action="store_true",
+                       help="compose and assemble, print the prompts, dispatch nothing")
+    panel.add_argument("--timeout", type=int, default=None)
 
     doctor = sub.add_parser("doctor", help="prove the dispatch command actually works")
     doctor.add_argument("--timeout", type=int, default=120)
@@ -122,8 +324,15 @@ def main():
     run.add_argument("prompts", help='JSON file of {slug: prompt}, or "-" for stdin')
     run.add_argument("--timeout", type=int, default=None)
 
+    rate = sub.add_parser("rate", help="rate a finished run's prose into distributions")
+    rate.add_argument("run_dir")
+    rate.add_argument("--force", action="store_true",
+                      help="rate even though the anchor file still has placeholders")
+
     args = parser.parse_args()
-    return {"detect": cmd_detect, "doctor": cmd_doctor, "run": cmd_run}[args.cmd](args)
+    return {"detect": cmd_detect, "doctor": cmd_doctor, "run": cmd_run,
+            "personas": cmd_personas, "panel": cmd_panel,
+            "rate": cmd_rate}[args.cmd](args)
 
 
 if __name__ == "__main__":
