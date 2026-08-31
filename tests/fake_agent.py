@@ -12,6 +12,9 @@ isolation claim gets tested rather than asserted.
   --fail       exit non-zero, to exercise the failure path
   --garbage    emit no JSON, to exercise the unparseable path
   --slow N     sleep N seconds, to exercise the timeout path
+
+Reads the prompt from the last positional argument when there is one, otherwise
+from stdin — so the suite exercises both dispatch modes against the same double.
 """
 import json
 import os
@@ -25,7 +28,9 @@ if "--fail" in argv:
 if "--slow" in argv:
     time.sleep(float(argv[argv.index("--slow") + 1]))
 
-prompt = sys.stdin.read()
+# A prompt arrives either piped or as the last argument, exactly like a real CLI.
+positional = [a for a in argv if not a.startswith("--") and a not in ("5",)]
+prompt = positional[-1] if positional else sys.stdin.read()
 
 if '{"ok": true}' in prompt:
     # The `doctor` probe asks for exactly this. A real agent would comply; so does this.

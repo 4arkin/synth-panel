@@ -1,63 +1,78 @@
 # Agent CLIs `synth-panel detect` knows how to look for.
 #
 # NO CLI IS PREFERRED. detect lists everything it finds, picks the first
-# alphabetically, and prints the line that switches to any other. The dispatcher
-# does not know or care which one you use: it writes a prompt to stdin and reads
-# an answer from stdout. Anything that does that works, listed here or not —
-# put it in [dispatch].command in config.toml and skip this file entirely.
+# alphabetically, and prints the line that switches to any other. Anything that
+# takes a prompt and prints an answer works, listed here or not — put it in
+# [dispatch] in config.toml and ignore this file entirely.
 #
-# Each entry has the same three fields, and every entry is held to the same bar.
+# Every entry carries the same five fields, and every entry is held to the same
+# bar. Symmetry is deliberate: one CLI quietly carrying better flags than the
+# others is how a vendor preference creeps back in.
 #
-#   command     the bare headless invocation: read a prompt on stdin, write the
-#               answer to stdout.
-#   tuning      flags that pin a CHEAP MODEL and BLOCK TOOLS. Empty means nobody
-#               has supplied them for this CLI yet, and detect will say so.
-#   entrypoint  the file this CLI reads on its own when it starts in a directory.
-#               "AGENTS.md" means it already reads the protocol; detect leaves it alone.
+#   command      the headless invocation
+#   prompt_via   "stdin" or "arg" — how that CLI wants to be handed a prompt
+#   tuning       flags pinning a CHEAP MODEL and BLOCKING TOOLS. Empty = nobody
+#                has supplied them yet, and detect prints UNTUNED next to it
+#   entrypoint   the file this CLI reads on its own in a directory. "AGENTS.md"
+#                means it already reads the protocol and detect leaves it alone
+#   notes        where the above came from, and what is still unknown
 #
-# WHY TUNING IS A FIELD AND NOT AN AFTERTHOUGHT
+# WHY TUNING MATTERS: a five-persona panel is five separate calls, all billed to
+# you. Measured on the one CLI exercised here, same prompt: $0.2591 on its
+# default model, $0.0417 on its small one. Personas do not need a frontier model
+# and have nothing to look up, and a persona that cannot read a file cannot read
+# yours.
 #
-#   cost      a five-persona panel is five separate calls, all billed to you.
-#             Measured on one CLI, same prompt: $0.2591 on its default model,
-#             $0.0417 on its small one. Personas do not need a frontier model.
-#   isolation a persona has nothing to look up. A persona that cannot read a
-#             file cannot read yours.
-#
-# An empty `tuning` is a gap in this repo, not a property of that CLI. If you
-# know your CLI's flags for "small model" and "no tools", a PR filling them in
-# is the single most useful contribution here.
+# EVERYTHING BELOW EXCEPT [claude] IS READ FROM VENDOR DOCUMENTATION, NOT RUN.
+# The author had only one of these installed. `synth-panel doctor` settles any
+# entry in one command, and a PR correcting one is the most useful thing you
+# could send.
 
 [amp]
 command = ["amp", "-x"]
-tuning = []
+prompt_via = "stdin"
+tuning = ["--fast"]
 entrypoint = "AGENTS.md"
+notes = "Docs: -x/--execute, prompt as arg or piped stdin, both work. --fast is the cheap mode. No tool-disable flag documented."
 
 [claude]
 command = ["claude", "-p"]
+prompt_via = "stdin"
 tuning = ["--model", "haiku", "--strict-mcp-config", "--disallowed-tools", "*"]
 entrypoint = "CLAUDE.md"
+notes = "The only entry actually exercised here, including the cost measurements above."
 
 [codex]
 command = ["codex", "exec", "-"]
-tuning = []
+prompt_via = "stdin"
+tuning = ["--sandbox", "read-only"]
 entrypoint = "AGENTS.md"
+notes = "Docs: `codex exec -` reads the whole prompt from stdin; read-only sandbox is the documented default for automation. A cheap-model name is NOT filled in because none was verifiable — add -m/--model yourself. --ignore-user-config is also worth adding if you have global instructions you do not want personas inheriting."
 
 [crush]
-command = ["crush", "run", "-q"]
+command = ["crush", "run"]
+prompt_via = "arg"
 tuning = []
 entrypoint = "CRUSH.md"
+notes = "LEAST CERTAIN ENTRY. `crush run` is not in the README, and model selection appears to be config-only with no flag. Treat this as a guess and check `crush run --help` before using it."
 
 [cursor-agent]
 command = ["cursor-agent", "-p"]
+prompt_via = "arg"
 tuning = []
 entrypoint = "AGENTS.md"
+notes = "Docs: -p/--print is non-interactive and the prompt is an argument; stdin is not documented. --model exists but the docs list no model names, so use --list-models and pin a small one yourself. No tool-disable flag exists."
 
 [gemini]
-command = ["gemini", "-p"]
-tuning = []
+command = ["gemini"]
+prompt_via = "stdin"
+tuning = ["--model", "gemini-2.5-flash"]
 entrypoint = "GEMINI.md"
+notes = "Docs: headless mode triggers on a non-TTY, which a subprocess is, and stdin is read as the prompt — so no -p is needed for our shape. gemini-2.5-flash is the small model. No tool/MCP-disable flag documented."
 
 [opencode]
 command = ["opencode", "run"]
+prompt_via = "arg"
 tuning = []
 entrypoint = "AGENTS.md"
+notes = "Docs: `run` takes the message as arguments, NOT stdin. Model is --model provider/model, which is account-specific, so no default is filled in. Tools can be restricted per-agent via --permissions."

@@ -29,8 +29,9 @@ def cmd_detect(args):
     for entry in results:
         mark = "<- using" if entry["cli"] == chosen["cli"] else ""
         tuned = "tuned" if entry["tuned"] else "UNTUNED"
-        print("  {:<14} {:<26} {:<12} {:<8} {}".format(
-            entry["cli"], entry["action"], entry["entrypoint"] or "", tuned, mark))
+        print("  {:<14} {:<26} {:<12} {:<6} {:<8} {}".format(
+            entry["cli"], entry["action"], entry["entrypoint"] or "",
+            entry["prompt_via"], tuned, mark))
     print()
     print("dispatch command: {}".format(" ".join(chosen["command"])))
     print("written to config.local.toml")
@@ -61,7 +62,8 @@ def cmd_doctor(args):
         return 1
     print("probing          : one subprocess, empty working directory ...")
     try:
-        result = dispatch.run_one(command, PROBE, timeout=args.timeout)
+        result = dispatch.run_one(command, PROBE, timeout=args.timeout,
+                                  prompt_via=cfg["dispatch"].get("prompt_via", "stdin"))
     except dispatch.DispatchError as exc:
         print("\nFAIL  {}".format(exc))
         return 1
@@ -103,7 +105,8 @@ def cmd_run(args):
     results = dispatch.run_all(
         command, payload,
         max_parallel=cfg["dispatch"].get("max_parallel", 5),
-        timeout=args.timeout or cfg["dispatch"].get("timeout_seconds", 420))
+        timeout=args.timeout or cfg["dispatch"].get("timeout_seconds", 420),
+        prompt_via=cfg["dispatch"].get("prompt_via", "stdin"))
     out = {}
     for slug, result in results.items():
         out[slug] = {
@@ -208,7 +211,8 @@ def cmd_panel(args):
     results = dispatch.run_all(
         cfg["dispatch"]["command"], prompts,
         max_parallel=cfg["dispatch"].get("max_parallel", 5),
-        timeout=args.timeout or cfg["dispatch"].get("timeout_seconds", 420))
+        timeout=args.timeout or cfg["dispatch"].get("timeout_seconds", 420),
+        prompt_via=cfg["dispatch"].get("prompt_via", "stdin"))
 
     run_dir = os.path.join(config.ROOT, "runs", time.strftime("%Y%m%d-%H%M%S"))
     os.makedirs(run_dir, exist_ok=True)

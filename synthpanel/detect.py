@@ -79,6 +79,8 @@ def install(root=config.ROOT, write_config=True):
             "entrypoint": entrypoint,
             "action": action,
             "tuned": bool(tuning),
+            "prompt_via": entry.get("prompt_via", "stdin"),
+            "notes": entry.get("notes", ""),
             "command": list(entry.get("command", [])) + list(tuning),
         })
 
@@ -88,15 +90,15 @@ def install(root=config.ROOT, write_config=True):
     chosen = results[0] if results else None
 
     if chosen and write_config:
-        _write_dispatch(root, chosen["command"])
+        _write_dispatch(root, chosen["command"], chosen["prompt_via"])
     return results, chosen
 
 
-def _write_dispatch(root, command):
+def _write_dispatch(root, command, prompt_via="stdin"):
     """Record the dispatch command in config.local.toml, leaving config.toml alone."""
     path = os.path.join(root, "config.local.toml")
-    rendered = "[dispatch]\ncommand = [{}]\n".format(
-        ", ".join('"{}"'.format(part) for part in command))
+    rendered = '[dispatch]\ncommand = [{}]\nprompt_via = "{}"\n'.format(
+        ", ".join('"{}"'.format(part) for part in command), prompt_via)
     existing = ""
     if os.path.exists(path):
         with open(path, encoding="utf-8") as fh:
@@ -110,7 +112,7 @@ def _write_dispatch(root, command):
                 continue
             if skipping and line.strip().startswith("["):
                 skipping = False
-            if skipping and line.strip().startswith("command"):
+            if skipping and line.strip().startswith(("command", "prompt_via")):
                 continue
             out.append(line)
         existing = "\n".join(out).strip() + "\n"

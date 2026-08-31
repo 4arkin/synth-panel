@@ -7,6 +7,10 @@
 # Fill this with `synth-panel detect`, or edit it by hand.
 # The prompt is written to the subprocess's stdin.
 command = []
+# How your CLI wants the prompt: "stdin" (piped) or "arg" (last argument).
+# `detect` fills this in from agents.toml; both are supported because agent CLIs
+# genuinely differ, and only supporting one would exclude the others.
+prompt_via = "stdin"
 timeout_seconds = 420
 max_parallel = 5
 

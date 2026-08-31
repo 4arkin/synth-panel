@@ -30,18 +30,29 @@ class DispatchError(RuntimeError):
     pass
 
 
-def run_one(command, prompt, timeout=420):
-    """Run a single persona. Never raises for the persona's own failure."""
+def run_one(command, prompt, timeout=420, prompt_via="stdin"):
+    """Run a single persona. Never raises for the persona's own failure.
+
+    `prompt_via` is not a detail. Some agent CLIs read a prompt from stdin and
+    some take it as an argument, and a dispatcher that only knows one of those
+    silently excludes every CLI that does the other. Both are supported so the
+    repo's runtime-agnostic claim survives contact with the actual tools.
+    """
     if not command:
         raise DispatchError(
             "No dispatch command configured. Run `synth-panel detect`, or set "
             "[dispatch].command in config.toml.")
+    if prompt_via not in ("stdin", "arg"):
+        raise DispatchError(
+            "prompt_via must be 'stdin' or 'arg', got {!r}".format(prompt_via))
+    argv = list(command) + ([prompt] if prompt_via == "arg" else [])
+    stdin_text = prompt if prompt_via == "stdin" else ""
     started = time.time()
     with tempfile.TemporaryDirectory(prefix="synth-panel-") as workdir:
         try:
             proc = subprocess.run(
-                list(command),
-                input=prompt,
+                argv,
+                input=stdin_text,
                 capture_output=True,
                 text=True,
                 timeout=timeout,
@@ -68,7 +79,7 @@ def run_one(command, prompt, timeout=420):
             ) from exc
 
 
-def run_all(command, prompts, max_parallel=5, timeout=420):
+def run_all(command, prompts, max_parallel=5, timeout=420, prompt_via="stdin"):
     """Dispatch every persona at once. `prompts` is {label: prompt}.
 
     Order of completion is irrelevant and deliberately not reported — nothing
@@ -77,7 +88,7 @@ def run_all(command, prompts, max_parallel=5, timeout=420):
     results = {}
     with ThreadPoolExecutor(max_workers=max(1, int(max_parallel))) as pool:
         futures = {
-            pool.submit(run_one, command, prompt, timeout): label
+            pool.submit(run_one, command, prompt, timeout, prompt_via): label
             for label, prompt in prompts.items()
         }
         for future in futures:

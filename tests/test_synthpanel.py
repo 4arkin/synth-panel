@@ -84,7 +84,9 @@ class TestRegistryIsVendorNeutral(unittest.TestCase):
         entries = config.registry()
         shapes = {frozenset(entry) for entry in entries.values()}
         self.assertEqual(len(shapes), 1, "registry entries disagree on fields: {}".format(shapes))
-        self.assertEqual(shapes.pop(), frozenset({"command", "tuning", "entrypoint"}))
+        self.assertEqual(
+            shapes.pop(),
+            frozenset({"command", "tuning", "entrypoint", "prompt_via", "notes"}))
 
     def test_every_entry_is_well_formed(self):
         for name, entry in config.registry().items():
@@ -92,6 +94,17 @@ class TestRegistryIsVendorNeutral(unittest.TestCase):
             self.assertIsInstance(entry["command"], list, name)
             self.assertIsInstance(entry["tuning"], list, name)
             self.assertTrue(entry["entrypoint"], name)
+            self.assertIn(entry["prompt_via"], ("stdin", "arg"), name)
+            self.assertTrue(entry["notes"], name)
+
+    def test_every_registry_entry_is_dispatchable(self):
+        """Every listed CLI must be reachable by a mode the dispatcher supports."""
+        for name, entry in config.registry().items():
+            result = dispatch.run_one(FAKE, "You are {}.".format(name), timeout=30,
+                                      prompt_via=entry["prompt_via"])
+            self.assertTrue(result["ok"], name)
+            self.assertTrue(
+                dispatch.extract_json(result["stdout"])["_probe"]["saw_persona_name"], name)
 
     def test_detect_composes_command_and_tuning(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -99,8 +112,8 @@ class TestRegistryIsVendorNeutral(unittest.TestCase):
             open(stub, "w").write("#!/bin/sh\ncat >/dev/null\n")
             os.chmod(stub, 0o755)
             open(os.path.join(tmp, "agents.toml"), "w").write(
-                '[tuned-agent]\ncommand = ["tuned-agent", "-p"]\n'
-                'tuning = ["--small"]\nentrypoint = "T.md"\n')
+                '[tuned-agent]\ncommand = ["tuned-agent", "-p"]\nprompt_via = "arg"\n'
+                'tuning = ["--small"]\nentrypoint = "T.md"\nnotes = "x"\n')
             open(os.path.join(tmp, "config.toml"), "w").write("[dispatch]\ncommand = []\n")
             old = os.environ["PATH"]
             os.environ["PATH"] = tmp + os.pathsep + old
@@ -110,6 +123,7 @@ class TestRegistryIsVendorNeutral(unittest.TestCase):
                 os.environ["PATH"] = old
         self.assertEqual(chosen["command"], ["tuned-agent", "-p", "--small"])
         self.assertTrue(chosen["tuned"])
+        self.assertEqual(chosen["prompt_via"], "arg")
 
     def test_untuned_entry_is_flagged_not_hidden(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -117,7 +131,8 @@ class TestRegistryIsVendorNeutral(unittest.TestCase):
             open(stub, "w").write("#!/bin/sh\ncat >/dev/null\n")
             os.chmod(stub, 0o755)
             open(os.path.join(tmp, "agents.toml"), "w").write(
-                '[bare-agent]\ncommand = ["bare-agent"]\ntuning = []\nentrypoint = "B.md"\n')
+                '[bare-agent]\ncommand = ["bare-agent"]\nprompt_via = "stdin"\n'
+                'tuning = []\nentrypoint = "B.md"\nnotes = "x"\n')
             open(os.path.join(tmp, "config.toml"), "w").write("[dispatch]\ncommand = []\n")
             old = os.environ["PATH"]
             os.environ["PATH"] = tmp + os.pathsep + old
@@ -191,6 +206,42 @@ class TestIsolation(unittest.TestCase):
         sizes = {k: dispatch.extract_json(v["stdout"])["_probe"]["prompt_chars"]
                  for k, v in results.items()}
         self.assertGreater(sizes["a"], sizes["b"])
+
+
+class TestPromptDelivery(unittest.TestCase):
+    """Agent CLIs genuinely differ here. Supporting only one silently excludes
+    every CLI that does the other, which would make runtime-agnostic a slogan."""
+
+    def test_stdin_mode(self):
+        result = dispatch.run_one(FAKE, "You are STDIN-PERSONA.", timeout=30,
+                                  prompt_via="stdin")
+        probe = dispatch.extract_json(result["stdout"])["_probe"]
+        self.assertTrue(probe["saw_persona_name"])
+        self.assertEqual(probe["prompt_chars"], len("You are STDIN-PERSONA."))
+
+    def test_arg_mode(self):
+        result = dispatch.run_one(FAKE, "You are ARG-PERSONA.", timeout=30,
+                                  prompt_via="arg")
+        probe = dispatch.extract_json(result["stdout"])["_probe"]
+        self.assertTrue(probe["saw_persona_name"])
+        self.assertEqual(probe["prompt_chars"], len("You are ARG-PERSONA."))
+
+    def test_both_modes_isolate_identically(self):
+        for mode in ("stdin", "arg"):
+            result = dispatch.run_one(FAKE, "You are a probe.", timeout=30, prompt_via=mode)
+            probe = dispatch.extract_json(result["stdout"])["_probe"]
+            self.assertEqual(probe["visible_files"], [], mode)
+            self.assertNotEqual(os.path.realpath(probe["cwd"]), os.path.realpath(ROOT), mode)
+
+    def test_run_all_honours_the_mode(self):
+        results = dispatch.run_all(FAKE, {"a": "You are A.", "b": "You are B."},
+                                   timeout=30, prompt_via="arg")
+        for slug, result in results.items():
+            self.assertTrue(dispatch.extract_json(result["stdout"])["_probe"]["saw_persona_name"])
+
+    def test_unknown_mode_is_refused(self):
+        with self.assertRaises(dispatch.DispatchError):
+            dispatch.run_one(FAKE, "x", prompt_via="telepathy")
 
 
 class TestDispatch(unittest.TestCase):
