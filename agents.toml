@@ -6,53 +6,58 @@
 # an answer from stdout. Anything that does that works, listed here or not —
 # put it in [dispatch].command in config.toml and skip this file entirely.
 #
-# entrypoint = the file that CLI reads on its own when it starts in a directory.
-#   "AGENTS.md" means it already reads the protocol and detect leaves it alone.
+# Each entry has the same three fields, and every entry is held to the same bar.
 #
-# TWO THINGS TO PIN, whichever CLI you use:
-#   a cheap model  — personas do not need a frontier model. Measured on one CLI,
-#                    same prompt: $0.2591 on its default model, $0.0417 on its
-#                    small one. A five-persona panel is five separate calls, and
-#                    all of them are billed to you.
-#   no tools       — a persona has nothing to look up. Blocking tools is cheaper
-#                    and is also an isolation win: a persona that cannot read a
-#                    file cannot read yours.
+#   command     the bare headless invocation: read a prompt on stdin, write the
+#               answer to stdout.
+#   tuning      flags that pin a CHEAP MODEL and BLOCK TOOLS. Empty means nobody
+#               has supplied them for this CLI yet, and detect will say so.
+#   entrypoint  the file this CLI reads on its own when it starts in a directory.
+#               "AGENTS.md" means it already reads the protocol; detect leaves it alone.
 #
-# exercised_here = someone ran this exact invocation and it worked. It does not
-# affect which CLI detect picks. Anything false is a best guess at that CLI's
-# headless flags — `synth-panel doctor` tells you in one command. PRs welcome.
+# WHY TUNING IS A FIELD AND NOT AN AFTERTHOUGHT
+#
+#   cost      a five-persona panel is five separate calls, all billed to you.
+#             Measured on one CLI, same prompt: $0.2591 on its default model,
+#             $0.0417 on its small one. Personas do not need a frontier model.
+#   isolation a persona has nothing to look up. A persona that cannot read a
+#             file cannot read yours.
+#
+# An empty `tuning` is a gap in this repo, not a property of that CLI. If you
+# know your CLI's flags for "small model" and "no tools", a PR filling them in
+# is the single most useful contribution here.
 
 [amp]
 command = ["amp", "-x"]
+tuning = []
 entrypoint = "AGENTS.md"
-exercised_here = false
 
 [claude]
-command = ["claude", "-p", "--model", "haiku", "--strict-mcp-config", "--disallowed-tools", "*"]
+command = ["claude", "-p"]
+tuning = ["--model", "haiku", "--strict-mcp-config", "--disallowed-tools", "*"]
 entrypoint = "CLAUDE.md"
-exercised_here = true
 
 [codex]
 command = ["codex", "exec", "-"]
+tuning = []
 entrypoint = "AGENTS.md"
-exercised_here = false
 
 [crush]
 command = ["crush", "run", "-q"]
+tuning = []
 entrypoint = "CRUSH.md"
-exercised_here = false
 
 [cursor-agent]
 command = ["cursor-agent", "-p"]
+tuning = []
 entrypoint = "AGENTS.md"
-exercised_here = false
 
 [gemini]
 command = ["gemini", "-p"]
+tuning = []
 entrypoint = "GEMINI.md"
-exercised_here = false
 
 [opencode]
 command = ["opencode", "run"]
+tuning = []
 entrypoint = "AGENTS.md"
-exercised_here = false

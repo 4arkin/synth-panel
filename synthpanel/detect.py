@@ -73,12 +73,13 @@ def install(root=config.ROOT, write_config=True):
             action = _write_pointer(os.path.join(root, entrypoint))
         else:
             action = "skipped"
+        tuning = entry.get("tuning") or []
         results.append({
             "cli": name,
             "entrypoint": entrypoint,
             "action": action,
-            "exercised": bool(entry.get("exercised_here")),
-            "command": entry.get("command", []),
+            "tuned": bool(tuning),
+            "command": list(entry.get("command", [])) + list(tuning),
         })
 
     # No CLI is preferred over another. Alphabetical, deterministic, and every

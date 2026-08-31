@@ -65,8 +65,8 @@ class TestRegistryIsVendorNeutral(unittest.TestCase):
                 os.chmod(stub, 0o755)
             registry = os.path.join(tmp, "agents.toml")
             open(registry, "w").write(
-                '[zzz-agent]\ncommand = ["zzz-agent"]\nentrypoint = "ZZZ.md"\nexercised_here = true\n'
-                '[aaa-agent]\ncommand = ["aaa-agent"]\nentrypoint = "AAA.md"\nexercised_here = false\n')
+                '[zzz-agent]\ncommand = ["zzz-agent"]\ntuning = ["--small"]\nentrypoint = "ZZZ.md"\n'
+                '[aaa-agent]\ncommand = ["aaa-agent"]\ntuning = []\nentrypoint = "AAA.md"\n')
             open(os.path.join(tmp, "config.toml"), "w").write("[dispatch]\ncommand = []\n")
             old_path = os.environ["PATH"]
             os.environ["PATH"] = tmp + os.pathsep + old_path
@@ -75,14 +75,57 @@ class TestRegistryIsVendorNeutral(unittest.TestCase):
             finally:
                 os.environ["PATH"] = old_path
         self.assertEqual(len(results), 2)
-        # zzz is the "exercised" one; alphabetical order must still win.
+        # zzz is the tuned one; alphabetical order must still win.
         self.assertEqual(chosen["cli"], "aaa-agent")
+
+    def test_every_entry_has_the_same_shape(self):
+        """Symmetry is the guard. One CLI carrying fields the others lack is how a
+        vendor preference creeps back in as 'the one that happens to be tuned'."""
+        entries = config.registry()
+        shapes = {frozenset(entry) for entry in entries.values()}
+        self.assertEqual(len(shapes), 1, "registry entries disagree on fields: {}".format(shapes))
+        self.assertEqual(shapes.pop(), frozenset({"command", "tuning", "entrypoint"}))
 
     def test_every_entry_is_well_formed(self):
         for name, entry in config.registry().items():
-            self.assertTrue(entry.get("command"), name)
+            self.assertTrue(entry["command"], name)
             self.assertIsInstance(entry["command"], list, name)
-            self.assertTrue(entry.get("entrypoint"), name)
+            self.assertIsInstance(entry["tuning"], list, name)
+            self.assertTrue(entry["entrypoint"], name)
+
+    def test_detect_composes_command_and_tuning(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            stub = os.path.join(tmp, "tuned-agent")
+            open(stub, "w").write("#!/bin/sh\ncat >/dev/null\n")
+            os.chmod(stub, 0o755)
+            open(os.path.join(tmp, "agents.toml"), "w").write(
+                '[tuned-agent]\ncommand = ["tuned-agent", "-p"]\n'
+                'tuning = ["--small"]\nentrypoint = "T.md"\n')
+            open(os.path.join(tmp, "config.toml"), "w").write("[dispatch]\ncommand = []\n")
+            old = os.environ["PATH"]
+            os.environ["PATH"] = tmp + os.pathsep + old
+            try:
+                results, chosen = detect.install(root=tmp, write_config=False)
+            finally:
+                os.environ["PATH"] = old
+        self.assertEqual(chosen["command"], ["tuned-agent", "-p", "--small"])
+        self.assertTrue(chosen["tuned"])
+
+    def test_untuned_entry_is_flagged_not_hidden(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            stub = os.path.join(tmp, "bare-agent")
+            open(stub, "w").write("#!/bin/sh\ncat >/dev/null\n")
+            os.chmod(stub, 0o755)
+            open(os.path.join(tmp, "agents.toml"), "w").write(
+                '[bare-agent]\ncommand = ["bare-agent"]\ntuning = []\nentrypoint = "B.md"\n')
+            open(os.path.join(tmp, "config.toml"), "w").write("[dispatch]\ncommand = []\n")
+            old = os.environ["PATH"]
+            os.environ["PATH"] = tmp + os.pathsep + old
+            try:
+                _, chosen = detect.install(root=tmp, write_config=False)
+            finally:
+                os.environ["PATH"] = old
+        self.assertFalse(chosen["tuned"])
 
 
 class TestDetect(unittest.TestCase):

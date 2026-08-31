@@ -28,8 +28,9 @@ def cmd_detect(args):
         return 1
     for entry in results:
         mark = "<- using" if entry["cli"] == chosen["cli"] else ""
-        print("  {:<14} {:<26} {:<12} {}".format(
-            entry["cli"], entry["action"], entry["entrypoint"] or "", mark))
+        tuned = "tuned" if entry["tuned"] else "UNTUNED"
+        print("  {:<14} {:<26} {:<12} {:<8} {}".format(
+            entry["cli"], entry["action"], entry["entrypoint"] or "", tuned, mark))
     print()
     print("dispatch command: {}".format(" ".join(chosen["command"])))
     print("written to config.local.toml")
@@ -41,10 +42,13 @@ def cmd_detect(args):
             if entry["cli"] != chosen["cli"]:
                 print('  [dispatch]\n  command = [{}]'.format(
                     ", ".join('"{}"'.format(c) for c in entry["command"])))
-    if not chosen["exercised"]:
+    if not chosen["tuned"]:
         print()
-        print("Nobody has run this CLI's flags through this project — they are a best")
-        print("guess. `synth-panel doctor` settles it in one command.")
+        print("UNTUNED: nobody has supplied {}'s flags for a small model and no".format(
+            chosen["cli"]))
+        print("tools, so personas will run on whatever it defaults to. A five-persona")
+        print("panel is five calls, all billed to you — check what that costs before")
+        print("a real run, then add the flags to [dispatch].command in config.local.toml.")
     return 0
 
 
