@@ -40,7 +40,7 @@ The orchestrator reads this block. The prose above is for you.
  "scenario": "concept-screening",
  "instrument": "panel",
  "reference_statements": "concept-screening.json",
- "reference_state": "checked",
+ "reference_state": "unchecked",
  "per_item": "concept",
  "verdicts": [
   "would use it",

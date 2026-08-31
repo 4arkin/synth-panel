@@ -1,5 +1,5 @@
 {
- "_provenance": "jtbd_fit and would_pay name no specific product, so this wording carries over to your concepts unchanged. It was checked once against a model referee on one author's material — no human graded it, and nobody has checked it on yours. Read docs/reference statements.md before leaning on a distribution from it. would_switch has no reference set and is collected as free text.",
+ "_provenance": "UNCHECKED. Tested by this repo's own tools/validate.py on material it was not written for: it cleared the 0.70 gate on one run out of six, and two identically-configured runs disagreed by 0.17. The wording is generic — it names no specific product — so it is a reasonable starting point, but it is not evidence. `synth-panel rate` refuses to score with it until you clear two runs on your own stimulus and flip reference_state to \"checked\". would_switch has no reference set and is collected as free text.",
  "jtbd_fit": [
   "This maps to no job I am trying to do. It is irrelevant to my work.",
   "This maps only loosely to a job I have. It is not one I am actively trying to do.",

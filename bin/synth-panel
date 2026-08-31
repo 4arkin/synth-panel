@@ -184,13 +184,17 @@ def cmd_panel(args):
     embedding = cfg.get("embedding", {})
     has_embedding = bool(embedding.get("endpoint") and embedding.get("model"))
     if not rated or spec["reference_state"] == "none":
-        mode = "qualitative (no anchor set ships for this scenario)"
+        mode = "qualitative (no reference statements ship for this scenario)"
+    elif spec["reference_state"] == "unchecked":
+        mode = ("qualitative — reference statements ship UNCHECKED and failed this "
+                "repo's own gate; validate on your material with tools/validate.py")
+    elif spec["reference_state"] == "templated":
+        mode = ("qualitative — reference statements are a TEMPLATE; fill them from the "
+                "stimulus and validate before any distribution means anything")
     elif not has_embedding:
         mode = "qualitative (no embedding provider configured)"
-    elif spec["reference_state"] == "templated":
-        mode = "SSR — reference statements TEMPLATED; fill from the stimulus, then nobody has checked them"
     else:
-        mode = "SSR ({}, checked reference statements — see docs/reference-statements.md on what that is worth)".format(
+        mode = "SSR ({}, reference statements checked on this installation)".format(
             args.scenario)
 
     state = "Panel: {} personas · fidelity: {} · rating: {}".format(
@@ -253,6 +257,12 @@ def cmd_rate(args):
     run_path = os.path.join(args.run_dir, "run.json")
     with open(run_path, encoding="utf-8") as fh:
         payload = json.load(fh)
+    if "reference_statements" not in payload and "anchors" in payload:
+        print("This run predates the rename from 'anchors' to 'reference statements'.",
+              file=sys.stderr)
+        print("Re-run the panel; a stale run cannot be rated against the current files.",
+              file=sys.stderr)
+        return 1
     if not payload.get("reference_statements"):
         print("Scenario '{}' ships no reference statements — it is qualitative by design.".format(
             payload["scenario"]), file=sys.stderr)
@@ -267,6 +277,20 @@ def cmd_rate(args):
         print("across all five statements of an axis. An anchor set whose top end echoes", file=sys.stderr)
         print("the stimulus while its bottom end does not will score skeptics as", file=sys.stderr)
         print("enthusiasts — measured, not theoretical. See docs/reference-statements.md.", file=sys.stderr)
+        return 1
+
+    if payload["reference_state"] != "checked" and not args.force:
+        print("Reference statements for '{}' have NOT cleared the gate on this "
+              "installation.".format(payload["scenario"]), file=sys.stderr)
+        print("Measured here across six runs on material the set was not written for,", file=sys.stderr)
+        print("it cleared 0.70 on one run out of six. A distribution from it would be", file=sys.stderr)
+        print("a number with nothing behind it.", file=sys.stderr)
+        print("", file=sys.stderr)
+        print("  python3 tools/validate.py --scenario {} --stimulus <yours>".format(
+            payload["scenario"]), file=sys.stderr)
+        print("", file=sys.stderr)
+        print("Clear two runs on YOUR material, then flip reference_state to \"checked\"", file=sys.stderr)
+        print("in the scenario file. --force rates anyway; the run says it was forced.", file=sys.stderr)
         return 1
     references = {k: v for k, v in json.loads(raw).items() if not k.startswith("_")}
 
@@ -283,8 +307,9 @@ def cmd_rate(args):
     except rate_mod.EmbeddingError as exc:
         print(exc, file=sys.stderr)
         return 1
-    payload["rating_mode"] = "SSR ({}, {} reference statements)".format(
-        payload["reference_statements"], payload["reference_state"])
+    payload["rating_mode"] = "SSR ({}, {}{})".format(
+        payload["reference_statements"], payload["reference_state"],
+        ", FORCED past the gate" if args.force else "")
     with open(run_path, "w", encoding="utf-8") as fh:
         json.dump(payload, fh, indent=1, ensure_ascii=False)
     json.dump(payload, sys.stdout, indent=1, ensure_ascii=False)

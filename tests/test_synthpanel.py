@@ -600,6 +600,26 @@ class TestEndToEnd(unittest.TestCase):
                            "--stimulus", self.stimulus, "--examples")
         self.assertNotEqual(result.returncode, 0)
 
+    def test_rate_refuses_an_unchecked_reference_set(self):
+        """The sets failed this repo's own gate. Refusing is the whole point."""
+        run_dir = os.path.join(self.tmp, "unchecked")
+        os.makedirs(run_dir)
+        json.dump({"scenario": "concept-screening",
+                   "reference_statements": "concept-screening.json",
+                   "reference_state": "unchecked", "workers": {}},
+                  open(os.path.join(run_dir, "run.json"), "w"))
+        open(self.local, "a").write(
+            '\n[embedding]\nendpoint = "http://127.0.0.1:1/v1/embeddings"\nmodel = "x"\n')
+        result = self._run("rate", run_dir)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("not cleared the gate", result.stderr.lower())
+        self.assertIn("tools/validate.py", result.stderr)
+
+    def test_no_reference_set_ships_as_checked(self):
+        """If one ever does, it is because someone cleared two runs and said so."""
+        for slug in prompt.available():
+            self.assertNotEqual(prompt.scenario(slug)["reference_state"], "checked", slug)
+
     def test_rate_refuses_templated_reference_sets(self):
         run_dir = os.path.join(self.tmp, "run")
         os.makedirs(run_dir)

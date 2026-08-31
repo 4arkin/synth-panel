@@ -87,8 +87,12 @@ Before you use an reference-statement file, check its state in `docs/reference-s
 because it is weaker than it sounds. Some sets ship checked, one ships templated and must be filled from the
 stimulus, and two scenarios ship with none at all. Never author a quick reference set to fill a gap.
 
-**Do not describe any rating in this repo as validated.** Nothing here has been graded by a human. Say
-where the reference statements came from and let the reader weigh it.
+**Every reference set in this repo ships `unchecked`, and `rate` refuses to run on one.** That is not an
+oversight — the sets were tested here and failed. If the user wants distributions, point them at
+`tools/validate.py` to clear the gate on their own material first. A panel without distributions is the
+normal case, not a degraded one.
+
+**Do not describe any rating in this repo as validated.** Nothing here has been graded by a human.
 
 When `rate.py` returns `"bimodal": true`, `expected` is `null` on purpose. Report the two modes in words.
 

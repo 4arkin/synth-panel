@@ -35,7 +35,7 @@ The orchestrator reads this block. The prose above is for you.
  "scenario": "ad-and-page-resonance",
  "instrument": "panel",
  "reference_statements": "ad-and-page-resonance.json",
- "reference_state": "checked",
+ "reference_state": "unchecked",
  "per_item": "variant",
  "verdicts": [
   "would act",

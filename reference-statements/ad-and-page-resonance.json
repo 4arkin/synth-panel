@@ -1,5 +1,5 @@
 {
- "_provenance": "would_keep_reading and would_act name no specific stimulus, so this wording carries over unchanged. Checked twice against a model referee, and the two runs disagreed with each other by a wide margin — this is the least stable set in the repo. No human graded it. would_trust has no reference set and is collected as free text.",
+ "_provenance": "UNCHECKED, and never tested on foreign material at all. The wording is generic, so it carries over mechanically, but the only numbers behind it came from its author's own material under a rank calculation later found to mishandle ties. `synth-panel rate` refuses to score with it until you validate it yourself. would_trust has no reference set and is collected as free text.",
  "would_keep_reading": [
   "I would scroll past this at the first line. It would not hold me at all.",
   "I would read a line or two of this and then scroll past it.",

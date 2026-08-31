@@ -6,9 +6,41 @@ embedded and compared against all five; the similarities become a probability di
 Reference-statement design is the single most fragile part of this method. A plausible-looking reference set will silently
 score skeptics as enthusiasts, and nothing in the output will look wrong.
 
-## How much this was actually checked
+## What happened when this repo tested its own reference statements
 
-Not much. Be suspicious of anything here that sounds like proof.
+They did not clear the gate. Six runs, on material they were not written for, using this repo's own
+`tools/validate.py`:
+
+| stimulus | panel | pooled |
+|---|---|---|
+| three concepts at once | mixed | +0.14 |
+| three concepts at once | mixed | +0.62 |
+| three concepts at once | buyer roles only | +0.16 |
+| three concepts at once | buyer roles only | +0.23 |
+| **one concept** | mixed | **+0.71** |
+| **one concept** | mixed | +0.54 |
+
+Two things came out of that. Asking a persona about several concepts in one answer wrecks the rating —
+the first four runs broke this repo's own instruction to ask one at a time, and fixing it moved the floor
+from +0.14 to +0.54. And even corrected, the set cleared 0.70 on **one run out of six**, with the two
+clean runs disagreeing by 0.17 on identical configuration.
+
+**So every set in this repo now ships `unchecked`, and `rate` refuses to run on one.** The sets are still
+here, and they are a reasonable starting point — they are the wording that survived the wording law. They
+are not evidence, and this repo will not emit a distribution on the strength of them.
+
+Validating them on **your** stimulus is a real thing you can do, and it is the only thing that would make
+a number here mean something:
+
+```
+python3 tools/validate.py --scenario <scenario> --stimulus <your file>
+```
+
+Clear two runs, flip `reference_state` to `"checked"` in the scenario file, and rating turns on.
+
+## How much any of this was checked
+
+Be suspicious of anything here that sounds like proof.
 
 The reference sets below were checked once, on one author's own material, by a **model referee** — a second
 model given the same five reference statements and asked which one the speaker was closest to. That catches a rater
@@ -71,14 +103,13 @@ scores are right, only that they are not obviously backwards.
 
 | Scenario | Axes | State |
 |---|---|---|
-| `concept-screening` | `jtbd_fit`, `would_pay` | **checked** · wording is generic, so it carries over to your concepts |
-| `ad-and-page-resonance` | `would_keep_reading`, `would_act` | **checked**, least stable of the sets · wording is generic |
+| `concept-screening` | `jtbd_fit`, `would_pay` | **unchecked** · failed the gate here, 1 of 6 runs · wording is generic |
+| `ad-and-page-resonance` | `would_keep_reading`, `would_act` | **unchecked** · never tested on foreign material |
 | `offer-pricing` | `dream_outcome`, `believability`, `time_tolerance`, `effort_acceptance` | **templated, unchecked once filled** — see below |
 | `feature-prioritisation` | — | none · prose only |
 | `packaging-choice` | — | none · prose only |
 
-"Checked" means it survived the crude test described above, on somebody else's material. It does not mean
-it works on yours.
+Nothing ships `checked`. `rate` refuses on an unchecked set and tells you how to change that.
 
 ### Why offer-pricing is templated and the others are not
 
