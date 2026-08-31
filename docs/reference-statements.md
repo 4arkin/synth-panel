@@ -19,15 +19,31 @@ They did not clear the gate. Six runs, on material they were not written for, us
 | three concepts at once | buyer roles only | +0.23 |
 | **one concept** | mixed | **+0.71** |
 | **one concept** | mixed | +0.54 |
+| one concept, statements written FOR it | mixed | +0.36 · one axis unmeasurable |
+| one concept, statements written FOR it | mixed | +0.72 · one axis unmeasurable |
+| a concept the panel splits on, statements written for it | buyer roles | +0.47 |
+| a concept the panel splits on, statements written for it | buyer roles | +0.31 |
 
-Two things came out of that. Asking a persona about several concepts in one answer wrecks the rating —
-the first four runs broke this repo's own instruction to ask one at a time, and fixing it moved the floor
-from +0.14 to +0.54. And even corrected, the set cleared 0.70 on **one run out of six**, with the two
-clean runs disagreeing by 0.17 on identical configuration.
+Ten runs. **No configuration has ever cleared the gate twice.**
 
-**So every set in this repo now ships `unchecked`, and `rate` refuses to run on one.** The sets are still
-here, and they are a reasonable starting point — they are the wording that survived the wording law. They
-are not evidence, and this repo will not emit a distribution on the strength of them.
+Things that were tried and did not fix it: asking about one concept at a time rather than several (this
+mattered — it moved the floor from +0.14 to +0.54, and the first four runs were breaking this repo's own
+instruction); restricting the panel to plausible buyers rather than including outsiders (it scored
+*worse*); and writing the statements for the specific stimulus instead of shipping generic ones (the
+principled fix, and the cleanest test of it came back +0.47 and +0.31 — lower than the generic set's best).
+
+**One confound is honestly untested.** The referee — the second model whose reading the rater is scored
+against — ran on the same small model as the personas throughout. A referee that reads stance poorly puts
+a ceiling on any correlation measurable against it, and that ceiling would look exactly like this. Nobody
+has run the gate with a stronger referee.
+
+**So every set in this repo ships `unchecked`, and `rate` refuses to run on one.** The sets are still here
+and they are a reasonable starting point. They are not evidence, and this repo will not emit a
+distribution on the strength of them.
+
+`synth-panel references` writes a set in your own stimulus's vocabulary, which is what the wording law
+asks for and what no shipped file can do for material it has never seen. It did not clear the gate here
+either. It is the better-principled starting point, not a fix.
 
 Validating them on **your** stimulus is a real thing you can do, and it is the only thing that would make
 a number here mean something:

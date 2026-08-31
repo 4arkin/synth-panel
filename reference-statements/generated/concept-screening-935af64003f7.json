@@ -1,0 +1,26 @@
+{
+ "jtbd_fit": [
+  "Scoring leads against our closed-won history and sending the first outreach email automatically in our voice is not a job I am actively trying to do.",
+  "Scoring leads against our closed-won history and sending the first outreach email automatically in our voice is helpful, but not a job I am actively trying to do.",
+  "I am uncertain whether scoring leads against our closed-won history and sending the first outreach email automatically in our voice is a job I am actively trying to do.",
+  "Scoring leads against our closed-won history and sending the first outreach email automatically in our voice is a job I am actively trying to do.",
+  "Scoring leads against our closed-won history and sending the first outreach email automatically in our voice is a core job I am actively trying to do."
+ ],
+ "would_pay": [
+  "I wouldn't pay per seat for automatic lead scoring and first-email writing—it doesn't solve our problem.",
+  "I'm skeptical that paying per seat for automatic lead scoring and first-email writing would justify the investment.",
+  "I'm uncertain whether paying per seat for automatic lead scoring and first-email writing is right for us.",
+  "I'd consider paying per seat for automatic lead scoring and first-email writing if the results are strong.",
+  "I would pay per seat for automatic lead scoring and first-email writing—it would transform our operation."
+ ],
+ "_provenance": "GENERATED for one specific stimulus, and UNCHECKED. Written in that stimulus's own vocabulary, which is what the wording law asks for and what the shipped sets could not do for material they were not written for. Generating a set and checking one are different jobs: run tools/validate.py on it before any distribution from it means anything. Regenerated automatically if the stimulus changes.",
+ "_checked": {
+  "passed": false,
+  "runs": [
+   0.468,
+   0.306
+  ],
+  "gate": 0.7,
+  "checked_at": "2026-09-01"
+ }
+}
