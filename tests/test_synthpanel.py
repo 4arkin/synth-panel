@@ -496,6 +496,55 @@ class TestRater(unittest.TestCase):
             os.environ["SSR_EMBED_MODEL"] = "fake-embed"
 
 
+class TestValidationHarness(unittest.TestCase):
+    """The gate docs/anchors.md sends users to. It has to ship and it has to be right."""
+
+    @classmethod
+    def setUpClass(cls):
+        spec = importlib.util.spec_from_file_location(
+            "validate_under_test", os.path.join(ROOT, "tools", "validate.py"))
+        cls.v = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(cls.v)
+
+    def test_ranks_share_positions_among_ties(self):
+        self.assertEqual(self.v.ranks([3, 3, 3, 1, 5]), [2.0, 2.0, 2.0, 0.0, 4.0])
+        self.assertEqual(self.v.ranks([1, 2, 3]), [0.0, 1.0, 2.0])
+
+    def test_spearman_endpoints(self):
+        self.assertAlmostEqual(self.v.spearman([1, 2, 3, 4, 5], [1, 2, 3, 4, 5]), 1.0)
+        self.assertAlmostEqual(self.v.spearman([1, 2, 3, 4, 5], [5, 4, 3, 2, 1]), -1.0)
+
+    def test_spearman_handles_tie_heavy_referee_scores(self):
+        """Referee output is integers 1-5 and ties constantly. Positional ranking
+        would fabricate an order among equals and inflate the correlation."""
+        rho = self.v.spearman([1.1, 2.2, 3.3, 4.4], [2, 2, 4, 4])
+        self.assertLess(rho, 1.0)
+        self.assertGreater(rho, 0.8)
+        self.assertIsNone(self.v.spearman([1, 2], [2, 1]))
+
+    def test_all_ties_is_undefined_not_a_fake_correlation(self):
+        self.assertIsNone(self.v.spearman([1, 2, 3, 4], [3, 3, 3, 3]))
+
+    def test_gate_is_two_runs_at_070(self):
+        self.assertEqual(self.v.GATE, 0.70)
+
+    def test_refuses_a_scenario_with_no_anchors(self):
+        result = subprocess.run(
+            [sys.executable, os.path.join(ROOT, "tools", "validate.py"),
+             "--scenario", "packaging-choice", "--stimulus", os.devnull, "--yes"],
+            capture_output=True, text=True, timeout=60)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("qualitative", result.stdout + result.stderr)
+
+    def test_refuses_an_unfilled_template(self):
+        result = subprocess.run(
+            [sys.executable, os.path.join(ROOT, "tools", "validate.py"),
+             "--scenario", "offer-pricing", "--stimulus", os.devnull, "--yes"],
+            capture_output=True, text=True, timeout=60)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("placeholder", (result.stdout + result.stderr).lower())
+
+
 class TestEndToEnd(unittest.TestCase):
     """The whole CLI, driven by a fake agent. No model, no key, no network."""
 

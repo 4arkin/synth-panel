@@ -54,8 +54,13 @@ four different anchor sets leaks general positivity across all four.
 Before you trust a distribution from an anchor set, check it: rank correlation ≥ 0.70 against an
 anchor-grounded referee, on **two independent runs**. Two, because one is not evidence — see above.
 
-Method in `ssr/validate.md`. The referee must be given **the same five anchors** and asked which one the
-speaker is closest to. A generic "1 = negative, 5 = positive" referee is wrong and understates rho by
+```
+python3 tools/validate.py --scenario <scenario> --stimulus ./your-stimulus.md
+```
+
+It elicits answers through the real pipeline — same personas, same worker prompts, same subprocess
+dispatch a panel uses — then scores each answer twice and reports the rank correlation, pooled and per
+axis. The referee is given **the same five anchors** and asked which one the speaker is closest to. A generic "1 = negative, 5 = positive" referee is wrong and understates rho by
 roughly 0.3 — it has no meaning for an axis like *"how far would you read"*.
 
 The referee is not ground truth. It is a model reading the same text, which reads polarity correctly where
