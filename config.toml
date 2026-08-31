@@ -16,12 +16,15 @@ max_parallel = 5
 # and ranking, not insight. The run states which mode it used.
 #
 # Any OpenAI-compatible /embeddings endpoint works. Nothing is hard-coded to a vendor.
-#   openai   -> https://api.openai.com/v1/embeddings          (text-embedding-3-small)
-#   ollama   -> http://localhost:11434/v1/embeddings          (nomic-embed-text)
-#   together -> https://api.together.xyz/v1/embeddings
+# There is NO default. If you leave this empty the repo runs qualitatively rather
+# than picking a vendor for you. Examples, in no order of preference:
+#   a local runner  -> http://localhost:11434/v1/embeddings   (nomic-embed-text)
+#   a hosted one    -> whatever your provider's /embeddings URL is
+# api_key_env is the NAME of an environment variable holding a key, if your
+# endpoint needs one. A local endpoint needs none, so leave it empty.
 endpoint = ""
 model = ""
-api_key_env = "OPENAI_API_KEY"
+api_key_env = ""
 
 [panel]
 # Panel composition. Isolation only buys you something if the panel can disagree.

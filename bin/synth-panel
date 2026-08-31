@@ -27,16 +27,24 @@ def cmd_detect(args):
         print("prompt on stdin and writes the answer to stdout will work.")
         return 1
     for entry in results:
-        flag = "verified" if entry["verified"] else "UNVERIFIED — run `synth-panel doctor`"
-        print("found {:<14} wrote {:<12} ({})  [{}]".format(
-            entry["cli"], entry["entrypoint"], entry["action"], flag))
+        mark = "<- using" if entry["cli"] == chosen["cli"] else ""
+        print("  {:<14} {:<26} {:<12} {}".format(
+            entry["cli"], entry["action"], entry["entrypoint"] or "", mark))
     print()
     print("dispatch command: {}".format(" ".join(chosen["command"])))
     print("written to config.local.toml")
-    if not chosen["verified"]:
+    if len(results) > 1:
         print()
-        print("This CLI's headless flags have not been exercised by this project.")
-        print("Run `synth-panel doctor` before trusting a run.")
+        print("No CLI is preferred here — this is just the first alphabetically.")
+        print("To use another, put its command in config.local.toml:")
+        for entry in results:
+            if entry["cli"] != chosen["cli"]:
+                print('  [dispatch]\n  command = [{}]'.format(
+                    ", ".join('"{}"'.format(c) for c in entry["command"])))
+    if not chosen["exercised"]:
+        print()
+        print("Nobody has run this CLI's flags through this project — they are a best")
+        print("guess. `synth-panel doctor` settles it in one command.")
     return 0
 
 
@@ -67,11 +75,11 @@ def cmd_doctor(args):
 
     embedding = cfg.get("embedding", {})
     if embedding.get("endpoint") and embedding.get("model"):
-        key_env = embedding.get("api_key_env", "OPENAI_API_KEY")
-        has_key = bool(os.environ.get(key_env))
-        print("embedding        : {} / {} · {} {}".format(
-            embedding["endpoint"], embedding["model"], key_env,
-            "set" if has_key else "NOT SET (fine for a local endpoint)"))
+        key_env = embedding.get("api_key_env") or ""
+        has_key = bool(key_env and os.environ.get(key_env))
+        print("embedding        : {} / {} · key {}".format(
+            embedding["endpoint"], embedding["model"],
+            "from ${}".format(key_env) if has_key else "none (fine for a local endpoint)"))
         print("rating mode      : SSR")
     else:
         print("embedding        : not configured")
@@ -255,7 +263,7 @@ def cmd_rate(args):
 
     os.environ.setdefault("SSR_EMBED_ENDPOINT", embedding["endpoint"])
     os.environ.setdefault("SSR_EMBED_MODEL", embedding["model"])
-    os.environ.setdefault("SSR_EMBED_KEY_ENV", embedding.get("api_key_env", "OPENAI_API_KEY"))
+    os.environ.setdefault("SSR_EMBED_KEY_ENV", embedding.get("api_key_env") or "")
     sys.path.insert(0, os.path.join(config.ROOT, "ssr"))
     import importlib
     rate_mod = importlib.import_module("rate")

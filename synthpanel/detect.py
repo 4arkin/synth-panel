@@ -9,6 +9,7 @@ import shutil
 
 from . import config
 
+PROTOCOL = "AGENTS.md"
 BEGIN = "<!-- BEGIN synth-panel -->"
 END = "<!-- END synth-panel -->"
 
@@ -64,22 +65,26 @@ def install(root=config.ROOT, write_config=True):
     results = []
     for name, entry in sorted(found.items()):
         entrypoint = entry.get("entrypoint")
-        action = _write_pointer(os.path.join(root, entrypoint)) if entrypoint else "skipped"
+        if entrypoint == PROTOCOL:
+            # This CLI already reads AGENTS.md by itself. Writing a pointer to
+            # AGENTS.md into AGENTS.md would be both useless and destructive.
+            action = "reads AGENTS.md directly"
+        elif entrypoint:
+            action = _write_pointer(os.path.join(root, entrypoint))
+        else:
+            action = "skipped"
         results.append({
             "cli": name,
             "entrypoint": entrypoint,
             "action": action,
-            "verified": bool(entry.get("verified")),
+            "exercised": bool(entry.get("exercised_here")),
             "command": entry.get("command", []),
         })
 
-    chosen = None
-    for candidate in results:  # prefer a CLI whose invocation this project has run
-        if candidate["verified"]:
-            chosen = candidate
-            break
-    if chosen is None and results:
-        chosen = results[0]
+    # No CLI is preferred over another. Alphabetical, deterministic, and every
+    # other one found is printed with the line that switches to it. A repo that
+    # silently picks a favourite vendor is not runtime-agnostic.
+    chosen = results[0] if results else None
 
     if chosen and write_config:
         _write_dispatch(root, chosen["command"])

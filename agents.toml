@@ -1,55 +1,58 @@
-# Registry of agent CLIs `synth-panel detect` knows how to look for.
+# Agent CLIs `synth-panel detect` knows how to look for.
 #
-# `verified` means the invocation below has been run end-to-end by this project.
-# `unverified` means the CLI is recognised but its headless flags have not been
-# exercised here — detect will still configure it, and `synth-panel doctor` will
-# tell you in one command whether it actually works. Send a PR flipping the flag
-# if you verify one.
+# NO CLI IS PREFERRED. detect lists everything it finds, picks the first
+# alphabetically, and prints the line that switches to any other. The dispatcher
+# does not know or care which one you use: it writes a prompt to stdin and reads
+# an answer from stdout. Anything that does that works, listed here or not —
+# put it in [dispatch].command in config.toml and skip this file entirely.
 #
 # entrypoint = the file that CLI reads on its own when it starts in a directory.
+#   "AGENTS.md" means it already reads the protocol and detect leaves it alone.
 #
-# EVERY DISPATCH IS BILLED TO YOU, on whatever account that CLI is logged into.
-# A panel of five personas is five separate calls. Pin a cheap model in the command
-# — the entries below do where the flags are known.
-
-[claude]
-# Personas do not need a frontier model, and they do not need tools. Pinning both
-# is a cost decision with measured numbers behind it — one persona, same prompt:
-#   claude -p                                    $0.2591  (default model)
-#   claude -p --model haiku                      $0.0538
-#   + --strict-mcp-config --disallowed-tools '*' $0.0369
-# Blocking tools is also an isolation win: a persona that cannot read a file cannot
-# accidentally read yours.
-command = ["claude", "-p", "--model", "haiku", "--strict-mcp-config", "--disallowed-tools", "*"]
-entrypoint = "CLAUDE.md"
-verified = true
-
-[codex]
-command = ["codex", "exec", "-"]
-entrypoint = "AGENTS.md"
-verified = false
-
-[cursor-agent]
-command = ["cursor-agent", "-p"]
-entrypoint = "AGENTS.md"
-verified = false
-
-[gemini]
-command = ["gemini", "-p"]
-entrypoint = "GEMINI.md"
-verified = false
-
-[opencode]
-command = ["opencode", "run"]
-entrypoint = "AGENTS.md"
-verified = false
+# TWO THINGS TO PIN, whichever CLI you use:
+#   a cheap model  — personas do not need a frontier model. Measured on one CLI,
+#                    same prompt: $0.2591 on its default model, $0.0417 on its
+#                    small one. A five-persona panel is five separate calls, and
+#                    all of them are billed to you.
+#   no tools       — a persona has nothing to look up. Blocking tools is cheaper
+#                    and is also an isolation win: a persona that cannot read a
+#                    file cannot read yours.
+#
+# exercised_here = someone ran this exact invocation and it worked. It does not
+# affect which CLI detect picks. Anything false is a best guess at that CLI's
+# headless flags — `synth-panel doctor` tells you in one command. PRs welcome.
 
 [amp]
 command = ["amp", "-x"]
 entrypoint = "AGENTS.md"
-verified = false
+exercised_here = false
+
+[claude]
+command = ["claude", "-p", "--model", "haiku", "--strict-mcp-config", "--disallowed-tools", "*"]
+entrypoint = "CLAUDE.md"
+exercised_here = true
+
+[codex]
+command = ["codex", "exec", "-"]
+entrypoint = "AGENTS.md"
+exercised_here = false
 
 [crush]
 command = ["crush", "run", "-q"]
 entrypoint = "CRUSH.md"
-verified = false
+exercised_here = false
+
+[cursor-agent]
+command = ["cursor-agent", "-p"]
+entrypoint = "AGENTS.md"
+exercised_here = false
+
+[gemini]
+command = ["gemini", "-p"]
+entrypoint = "GEMINI.md"
+exercised_here = false
+
+[opencode]
+command = ["opencode", "run"]
+entrypoint = "AGENTS.md"
+exercised_here = false

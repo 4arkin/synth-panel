@@ -3,6 +3,11 @@ runs/*
 personas/*
 !personas/.gitkeep
 config.local.toml
+# Entrypoint pointers written by `synth-panel detect`. Which agent CLI you use is
+# yours, not the repo's — none of them belong in version control.
+CLAUDE.md
+GEMINI.md
+CRUSH.md
 __pycache__/
 *.pyc
 .DS_Store

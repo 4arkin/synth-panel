@@ -13,12 +13,12 @@ midpoint-regressing distributions (arXiv:2510.08338). Measured on this skill's o
 85% of scores were 2 or 3, a 5 never appeared once, and 4 of 12 persona-axis cells returned the
 IDENTICAL integer across 8 independent samples.
 
-PROVIDER IS NOT HARD-CODED. Any OpenAI-compatible /embeddings endpoint works. Defaults are
-OpenAI's; override with environment variables:
-  SSR_EMBED_ENDPOINT  default https://api.openai.com/v1/embeddings
-  SSR_EMBED_MODEL     default text-embedding-3-small  (~$0.02/1M tokens)
-  SSR_EMBED_KEY_ENV   default OPENAI_API_KEY — the NAME of the env var holding the key
-An endpoint that needs no key (a local Ollama, say) works when that env var is unset.
+NO VENDOR IS THE DEFAULT. There is no fallback endpoint: if you do not name one, this
+refuses to guess. Any OpenAI-compatible /embeddings endpoint works, including a local one.
+  SSR_EMBED_ENDPOINT  required — e.g. http://localhost:11434/v1/embeddings
+  SSR_EMBED_MODEL     required — e.g. nomic-embed-text
+  SSR_EMBED_KEY_ENV   optional — the NAME of the env var holding a key, if the endpoint
+                      needs one at all. A local endpoint needs none.
 
 BIMODALITY. A response in a concession shape ("yes I want this, BUT the framing is vocabulary")
 puts mass at both ends and the mean lands in the middle, describing a position nobody held.
@@ -35,14 +35,19 @@ TAU = 0.5   # softmax temperature over z-scored similarities
 TAIL = 0.25  # min mass at BOTH ends before a distribution counts as bimodal
 MID = 0.20  # max mass in the middle for the same
 
-ENDPOINT = os.environ.get("SSR_EMBED_ENDPOINT", "https://api.openai.com/v1/embeddings")
-MODEL = os.environ.get("SSR_EMBED_MODEL", "text-embedding-3-small")
-KEY_ENV = os.environ.get("SSR_EMBED_KEY_ENV", "OPENAI_API_KEY")
+ENDPOINT = os.environ.get("SSR_EMBED_ENDPOINT", "")
+MODEL = os.environ.get("SSR_EMBED_MODEL", "")
+KEY_ENV = os.environ.get("SSR_EMBED_KEY_ENV", "")
 
 
 def embed(texts, model=MODEL, endpoint=ENDPOINT):
+    if not endpoint or not model:
+        raise EmbeddingError(
+            "No embedding provider named. Set SSR_EMBED_ENDPOINT and SSR_EMBED_MODEL, or "
+            "[embedding] in config.toml. There is no default on purpose — this repo does "
+            "not pick a vendor for you.")
     headers = {"Content-Type": "application/json"}
-    key = os.environ.get(KEY_ENV)
+    key = os.environ.get(KEY_ENV) if KEY_ENV else None
     if key:
         headers["Authorization"] = "Bearer " + key
     req = urllib.request.Request(
