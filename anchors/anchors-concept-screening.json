@@ -1,0 +1,13 @@
+{"_provenance": "jtbd_fit and would_pay are the anchor sets validated at rho +0.86 against an anchor-grounded referee, 2026-08-18. They contain no stimulus vocabulary, so they transfer to your concepts unchanged. would_switch has no validated set and is collected as free text — see docs/anchors.md.",
+"jtbd_fit":[
+ "This maps to no job I am trying to do. It is irrelevant to my work.",
+ "This maps only loosely to a job I have. It is not one I am actively trying to do.",
+ "This maps partly to a job I have, though not one near the top of my list.",
+ "This maps to a job I am actively trying to do.",
+ "This is exactly the job I have. It maps precisely to what I am actively trying to do."],
+"would_pay":[
+ "I would not pay for this at that price. No money would change hands.",
+ "I would probably not pay for this at that price.",
+ "I might pay for this at that price, but I would need more before deciding.",
+ "I would pay for this at that price.",
+ "I would pay for this immediately at that price. Take my money."]}

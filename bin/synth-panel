@@ -1,0 +1,130 @@
+#!/usr/bin/env python3
+"""synth-panel — dispatch, detect, doctor.
+
+The orchestration lives in AGENTS.md and is run by your agent. This CLI owns the
+parts that must not be left to a language model: finding your agent CLI, proving
+it works, and launching one subprocess per persona.
+"""
+import argparse
+import json
+import os
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from synthpanel import config, detect, dispatch  # noqa: E402
+
+PROBE = ('Reply with nothing but this, in a fenced json block: '
+         '{"ok": true}')
+
+
+def cmd_detect(args):
+    results, chosen = detect.install()
+    if not results:
+        print("No known agent CLI found on PATH.")
+        print("Set [dispatch].command in config.toml by hand — any CLI that reads a")
+        print("prompt on stdin and writes the answer to stdout will work.")
+        return 1
+    for entry in results:
+        flag = "verified" if entry["verified"] else "UNVERIFIED — run `synth-panel doctor`"
+        print("found {:<14} wrote {:<12} ({})  [{}]".format(
+            entry["cli"], entry["entrypoint"], entry["action"], flag))
+    print()
+    print("dispatch command: {}".format(" ".join(chosen["command"])))
+    print("written to config.local.toml")
+    if not chosen["verified"]:
+        print()
+        print("This CLI's headless flags have not been exercised by this project.")
+        print("Run `synth-panel doctor` before trusting a run.")
+    return 0
+
+
+def cmd_doctor(args):
+    cfg = config.load()
+    command = cfg["dispatch"]["command"]
+    print("dispatch command : {}".format(" ".join(command) if command else "(unset)"))
+    if not command:
+        print("\nNothing configured. Run `synth-panel detect`.")
+        return 1
+    print("probing          : one subprocess, empty working directory ...")
+    try:
+        result = dispatch.run_one(command, PROBE, timeout=args.timeout)
+    except dispatch.DispatchError as exc:
+        print("\nFAIL  {}".format(exc))
+        return 1
+    parsed = dispatch.extract_json(result["stdout"])
+    if result["ok"] and parsed and parsed.get("ok") is True:
+        print("dispatch         : PASS ({}s)".format(result["seconds"]))
+    else:
+        print("dispatch         : FAIL (exit {}, {}s)".format(
+            result["returncode"], result["seconds"]))
+        print("  stdout: {}".format(result["stdout"][:400].strip() or "(empty)"))
+        print("  stderr: {}".format(result["stderr"][:400].strip() or "(empty)"))
+        print("\nFix [dispatch].command in config.local.toml. It must accept a prompt on")
+        print("stdin and write the answer to stdout.")
+        return 1
+
+    embedding = cfg.get("embedding", {})
+    if embedding.get("endpoint") and embedding.get("model"):
+        key_env = embedding.get("api_key_env", "OPENAI_API_KEY")
+        has_key = bool(os.environ.get(key_env))
+        print("embedding        : {} / {} · {} {}".format(
+            embedding["endpoint"], embedding["model"], key_env,
+            "set" if has_key else "NOT SET (fine for a local endpoint)"))
+        print("rating mode      : SSR")
+    else:
+        print("embedding        : not configured")
+        print("rating mode      : qualitative — verdicts, objections and the")
+        print("                   disagreement map, no distributions")
+    return 0
+
+
+def cmd_run(args):
+    """Dispatch pre-assembled worker prompts. Your agent assembles them; this launches them."""
+    cfg = config.load()
+    command = cfg["dispatch"]["command"]
+    payload = json.load(open(args.prompts) if args.prompts != "-" else sys.stdin)
+    if not isinstance(payload, dict) or not payload:
+        print("Expected a JSON object of {persona_slug: prompt}.", file=sys.stderr)
+        return 2
+    results = dispatch.run_all(
+        command, payload,
+        max_parallel=cfg["dispatch"].get("max_parallel", 5),
+        timeout=args.timeout or cfg["dispatch"].get("timeout_seconds", 420))
+    out = {}
+    for slug, result in results.items():
+        out[slug] = {
+            "ok": result["ok"],
+            "seconds": result["seconds"],
+            "parsed": dispatch.extract_json(result["stdout"]),
+            "raw": result["stdout"],
+            "stderr": result["stderr"],
+        }
+    json.dump(out, sys.stdout, indent=1, ensure_ascii=False)
+    print()
+    failed = [s for s, r in out.items() if not r["ok"] or r["parsed"] is None]
+    if failed:
+        print("unparsed or failed: {}".format(", ".join(sorted(failed))), file=sys.stderr)
+    return 0
+
+
+def main():
+    parser = argparse.ArgumentParser(prog="synth-panel", description=__doc__,
+                                     formatter_class=argparse.RawDescriptionHelpFormatter)
+    sub = parser.add_subparsers(dest="cmd", required=True)
+
+    sub.add_parser("detect", help="find agent CLIs on PATH and write their entrypoint files")
+
+    doctor = sub.add_parser("doctor", help="prove the dispatch command actually works")
+    doctor.add_argument("--timeout", type=int, default=120)
+
+    run = sub.add_parser("run", help="dispatch worker prompts, one subprocess each")
+    run.add_argument("prompts", help='JSON file of {slug: prompt}, or "-" for stdin')
+    run.add_argument("--timeout", type=int, default=None)
+
+    args = parser.parse_args()
+    return {"detect": cmd_detect, "doctor": cmd_doctor, "run": cmd_run}[args.cmd](args)
+
+
+if __name__ == "__main__":
+    sys.exit(main())

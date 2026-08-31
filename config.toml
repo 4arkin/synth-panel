@@ -1,0 +1,32 @@
+# synth-panel configuration.
+# Copy to config.local.toml to override without touching version control.
+
+[dispatch]
+# The agent CLI used to run each persona in its own process.
+# Isolation is the credibility claim: one persona, one process, no shared context.
+# Fill this with `synth-panel detect`, or edit it by hand.
+# The prompt is written to the subprocess's stdin.
+command = []
+timeout_seconds = 420
+max_parallel = 5
+
+[embedding]
+# OPTIONAL. Without it, panels run qualitatively — verdicts, objections, the
+# disagreement map and the stopped-reading line all survive. You lose distributions
+# and ranking, not insight. The run states which mode it used.
+#
+# Any OpenAI-compatible /embeddings endpoint works. Nothing is hard-coded to a vendor.
+#   openai   -> https://api.openai.com/v1/embeddings          (text-embedding-3-small)
+#   ollama   -> http://localhost:11434/v1/embeddings          (nomic-embed-text)
+#   together -> https://api.together.xyz/v1/embeddings
+endpoint = ""
+model = ""
+api_key_env = "OPENAI_API_KEY"
+
+[panel]
+# Panel composition. Isolation only buys you something if the panel can disagree.
+size_min = 3
+size_max = 5
+require_skeptic = true
+min_distinct_roles = 2
+rotation_depth = 2

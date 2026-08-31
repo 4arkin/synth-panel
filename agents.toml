@@ -1,0 +1,44 @@
+# Registry of agent CLIs `synth-panel detect` knows how to look for.
+#
+# `verified` means the invocation below has been run end-to-end by this project.
+# `unverified` means the CLI is recognised but its headless flags have not been
+# exercised here — detect will still configure it, and `synth-panel doctor` will
+# tell you in one command whether it actually works. Send a PR flipping the flag
+# if you verify one.
+#
+# entrypoint = the file that CLI reads on its own when it starts in a directory.
+
+[claude]
+command = ["claude", "-p"]
+entrypoint = "CLAUDE.md"
+verified = true
+
+[codex]
+command = ["codex", "exec", "-"]
+entrypoint = "AGENTS.md"
+verified = false
+
+[cursor-agent]
+command = ["cursor-agent", "-p"]
+entrypoint = "AGENTS.md"
+verified = false
+
+[gemini]
+command = ["gemini", "-p"]
+entrypoint = "GEMINI.md"
+verified = false
+
+[opencode]
+command = ["opencode", "run"]
+entrypoint = "AGENTS.md"
+verified = false
+
+[amp]
+command = ["amp", "-x"]
+entrypoint = "AGENTS.md"
+verified = false
+
+[crush]
+command = ["crush", "run", "-q"]
+entrypoint = "CRUSH.md"
+verified = false

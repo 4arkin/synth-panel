@@ -1,0 +1,8 @@
+runs/*
+!runs/.gitkeep
+personas/*
+!personas/.gitkeep
+config.local.toml
+__pycache__/
+*.pyc
+.DS_Store
