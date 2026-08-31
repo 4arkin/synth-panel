@@ -13,7 +13,7 @@ import time
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from synthpanel import compose, config, detect, dispatch, personas, prompt  # noqa: E402
+from synthpanel import compose, config, detect, dispatch, generate, personas, prompt  # noqa: E402
 
 PROBE = ('Reply with nothing but this, in a fenced json block: '
          '{"ok": true}')
@@ -183,8 +183,19 @@ def cmd_panel(args):
     rated = [a["key"] for a in spec["axes"] if a["rated"]]
     embedding = cfg.get("embedding", {})
     has_embedding = bool(embedding.get("endpoint") and embedding.get("model"))
+    gen_refs, gen_path = generate.load(args.scenario, stimulus)
+    gate = generate.checked(args.scenario, stimulus)
+    gen_ok = bool(gen_refs and gate and gate.get("passed"))
     if not rated or spec["reference_state"] == "none":
         mode = "qualitative (no reference statements ship for this scenario)"
+    elif gen_ok and has_embedding:
+        mode = "SSR — reference statements written for THIS stimulus and gate-checked ({})".format(
+            ", ".join("{:+.2f}".format(r) for r in gate["runs"] if r is not None))
+    elif gen_refs and not gate:
+        mode = ("qualitative — a set was written for this stimulus but not checked yet; "
+                "run tools/validate.py to turn scoring on")
+    elif gen_refs and gate and not gate.get("passed"):
+        mode = "qualitative — the set written for this stimulus did not clear the gate"
     elif spec["reference_state"] == "unchecked":
         mode = ("qualitative — reference statements ship UNCHECKED and failed this "
                 "repo's own gate; validate on your material with tools/validate.py")
@@ -230,6 +241,8 @@ def cmd_panel(args):
             fh.write(result["stdout"])
 
     payload = {"state": state, "scenario": args.scenario,
+               "generated_references": os.path.relpath(gen_path, config.ROOT) if gen_ok else None,
+               "stimulus_fingerprint": generate.fingerprint(args.scenario, stimulus),
                "reference_state": spec["reference_state"], "reference_statements": spec["reference_statements"],
                "rated_axes": rated, "fidelity": personas.fidelity(roster),
                "example_pool": is_example, "notes": notes,
@@ -268,6 +281,22 @@ def cmd_rate(args):
             payload["scenario"]), file=sys.stderr)
         return 1
 
+    generated = payload.get("generated_references")
+    if generated:
+        gen_path = os.path.join(config.ROOT, generated)
+        with open(gen_path, encoding="utf-8") as fh:
+            data = json.load(fh)
+        stamp = data.get("_checked") or {}
+        if not stamp.get("passed") and not args.force:
+            print("The set written for this stimulus has not cleared the gate.", file=sys.stderr)
+            print("  python3 tools/validate.py --scenario {} --stimulus <yours>".format(
+                payload["scenario"]), file=sys.stderr)
+            return 1
+        references = {k: v for k, v in data.items() if not k.startswith("_")}
+        rate_source = "{} (written for this stimulus, gate {})".format(
+            generated, ", ".join("{:+.2f}".format(r) for r in stamp.get("runs", []) if r is not None))
+        return _rate_with(cfg, payload, references, run_path, rate_source, args)
+
     reference_path = os.path.join(config.ROOT, "reference-statements", payload["reference_statements"])
     with open(reference_path, encoding="utf-8") as fh:
         raw = fh.read()
@@ -293,7 +322,14 @@ def cmd_rate(args):
         print("in the scenario file. --force rates anyway; the run says it was forced.", file=sys.stderr)
         return 1
     references = {k: v for k, v in json.loads(raw).items() if not k.startswith("_")}
+    source = "{} ({}, shipped)".format(
+        payload["reference_statements"], payload["reference_state"])
+    return _rate_with(cfg, payload, references, run_path, source, args)
 
+
+def _rate_with(cfg, payload, references, run_path, source, args):
+    """Rate a finished run against one set of reference statements."""
+    embedding = cfg["embedding"]
     os.environ.setdefault("SSR_EMBED_ENDPOINT", embedding["endpoint"])
     os.environ.setdefault("SSR_EMBED_MODEL", embedding["model"])
     os.environ.setdefault("SSR_EMBED_KEY_ENV", embedding.get("api_key_env") or "")
@@ -307,18 +343,13 @@ def cmd_rate(args):
     except rate_mod.EmbeddingError as exc:
         print(exc, file=sys.stderr)
         return 1
-    payload["rating_mode"] = "SSR ({}, {}{})".format(
-        payload["reference_statements"], payload["reference_state"],
-        ", FORCED past the gate" if args.force else "")
+    payload["rating_mode"] = "SSR — {}{}".format(
+        source, ", FORCED past the gate" if args.force else "")
     with open(run_path, "w", encoding="utf-8") as fh:
         json.dump(payload, fh, indent=1, ensure_ascii=False)
     json.dump(payload, sys.stdout, indent=1, ensure_ascii=False)
     print()
 
-    if payload["reference_state"] == "templated":
-        print("\nThese reference statements were filled in from a template and nobody has checked them.",
-              file=sys.stderr)
-        print("Say so when you report the distributions.", file=sys.stderr)
     for slug, axis in bimodal:
         print("bimodal: {}.{} — expected is null on purpose. Report both modes in "
               "words; the mean of a split distribution is not a reading.".format(slug, axis),
@@ -336,6 +367,54 @@ def _rate_workers(rate_mod, payload, references, bimodal):
         for axis, result in worker["ratings"].items():
             if result["bimodal"]:
                 bimodal.append((slug, axis))
+
+
+def cmd_references(args):
+    """Write reference statements in this stimulus's own vocabulary."""
+    try:
+        spec = prompt.scenario(args.scenario)
+    except (FileNotFoundError, ValueError) as exc:
+        print(exc, file=sys.stderr)
+        return 2
+    rated = [a["key"] for a in spec["axes"] if a["rated"]]
+    if not rated:
+        print("Scenario '{}' rates nothing — it is qualitative by design.".format(args.scenario),
+              file=sys.stderr)
+        return 1
+
+    with open(args.stimulus, encoding="utf-8") as fh:
+        stimulus = fh.read().strip()
+
+    existing, path = generate.load(args.scenario, stimulus)
+    if existing and not args.regenerate:
+        print("Already written for this exact stimulus:")
+        print("  {}".format(os.path.relpath(path, config.ROOT)))
+        print("  axes: {}".format(", ".join(sorted(existing))))
+        print("\nStill UNCHECKED. Generating a set and checking one are different jobs:")
+        print("  python3 tools/validate.py --scenario {} --stimulus {}".format(
+            args.scenario, args.stimulus))
+        print("\n--regenerate writes a new one.")
+        return 0
+
+    print("Writing {} reference sets in this stimulus's vocabulary ...".format(len(rated)))
+    references, report = generate.generate(spec, stimulus)
+    for line in report:
+        print("  {}".format(line))
+    if not references:
+        print("\nNothing usable came back. Nothing written.", file=sys.stderr)
+        return 1
+    missing = [axis for axis in rated if axis not in references]
+    if missing:
+        print("\nNo usable set for: {}. Those axes stay free text.".format(", ".join(missing)))
+
+    path = generate.save(args.scenario, stimulus, references)
+    print("\nwritten: {}".format(os.path.relpath(path, config.ROOT)))
+    print("\nThis set is UNCHECKED. It was written for your stimulus, which is what the")
+    print("shipped sets could not do — but nobody has measured whether it rates correctly.")
+    print("Check it, twice, before trusting a distribution:")
+    print("  python3 tools/validate.py --scenario {} --stimulus {}".format(
+        args.scenario, args.stimulus))
+    return 0
 
 
 def main():
@@ -367,6 +446,13 @@ def main():
     run.add_argument("prompts", help='JSON file of {slug: prompt}, or "-" for stdin')
     run.add_argument("--timeout", type=int, default=None)
 
+    refs = sub.add_parser("references",
+                          help="write reference statements in your stimulus's own vocabulary")
+    refs.add_argument("--scenario", required=True)
+    refs.add_argument("--stimulus", required=True)
+    refs.add_argument("--regenerate", action="store_true",
+                      help="overwrite the set already written for this stimulus")
+
     rate = sub.add_parser("rate", help="rate a finished run's prose into distributions")
     rate.add_argument("run_dir")
     rate.add_argument("--force", action="store_true",
@@ -375,7 +461,7 @@ def main():
     args = parser.parse_args()
     return {"detect": cmd_detect, "doctor": cmd_doctor, "run": cmd_run,
             "personas": cmd_personas, "panel": cmd_panel,
-            "rate": cmd_rate}[args.cmd](args)
+            "references": cmd_references, "rate": cmd_rate}[args.cmd](args)
 
 
 if __name__ == "__main__":

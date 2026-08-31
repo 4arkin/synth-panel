@@ -1,0 +1,26 @@
+{
+ "jtbd_fit": [
+  "Maintaining temperature compliance and preparing audit reports are not part of what I'm actively trying to do.",
+  "Maintaining temperature compliance and preparing audit reports are a small part of what I'm actively trying to do.",
+  "I'm unsure whether maintaining temperature compliance and preparing audit reports are part of what I'm actively trying to do.",
+  "Maintaining temperature compliance and preparing audit reports are a significant part of what I'm actively trying to do.",
+  "Maintaining temperature compliance and preparing audit reports are central to what I'm actively trying to do."
+ ],
+ "would_pay": [
+  "This compliance system's continuous temperature recording and automatic inspection report filing would not justify the monthly cost for our operation.",
+  "This compliance system's continuous temperature recording and automatic inspection report filing has some value, but I'm not convinced it justifies the monthly cost.",
+  "I see value in this compliance system's continuous temperature recording and automatic inspection report filing, but I'm genuinely unsure whether the monthly cost is justified.",
+  "This compliance system's continuous temperature recording and automatic inspection report filing would likely justify the monthly cost, and I would exchange money for it.",
+  "This compliance system's continuous temperature recording and automatic inspection report filing clearly justify the monthly cost, and I would absolutely exchange money for it."
+ ],
+ "_provenance": "GENERATED for one specific stimulus, and UNCHECKED. Written in that stimulus's own vocabulary, which is what the wording law asks for and what the shipped sets could not do for material they were not written for. Generating a set and checking one are different jobs: run tools/validate.py on it before any distribution from it means anything. Regenerated automatically if the stimulus changes.",
+ "_checked": {
+  "passed": false,
+  "runs": [
+   0.364,
+   0.724
+  ],
+  "gate": 0.7,
+  "checked_at": "2026-09-01"
+ }
+}

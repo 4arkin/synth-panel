@@ -37,7 +37,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from synthpanel import compose, config, dispatch, personas, prompt  # noqa: E402
+from synthpanel import compose, config, dispatch, generate, personas, prompt  # noqa: E402
 
 GATE = 0.70
 
@@ -183,8 +183,11 @@ def one_run(cfg, rater, roster, spec, stimulus, references, questions, reps):
     for axis in sorted({cells[i][0] for i in paired}):
         idx = [i for i in paired if cells[i][0] == axis]
         per_axis[axis] = (spearman([ssr[i] for i in idx], [ref[i] for i in idx]), len(idx))
-    pooled = spearman([ssr[i] for i in paired], [ref[i] for i in paired])
-    return {"pooled": pooled, "per_axis": per_axis, "n": len(paired), "dropped": dropped}, None
+    measurable = [i for i in paired if per_axis[cells[i][0]][0] is not None]
+    pooled = spearman([ssr[i] for i in measurable], [ref[i] for i in measurable])
+    undefined = sorted(a for a, (rho, _) in per_axis.items() if rho is None)
+    return {"pooled": pooled, "per_axis": per_axis, "n": len(measurable),
+            "undefined": undefined, "dropped": dropped}, None
 
 
 def main():
@@ -214,13 +217,22 @@ def main():
         sys.exit("Scenario '{}' ships no reference statements — it is qualitative by design, and\n"
                  "there is nothing here to validate.".format(args.scenario))
 
-    reference_path = os.path.join(config.ROOT, "reference-statements", spec["reference_statements"])
-    raw = open(reference_path, encoding="utf-8").read()
-    if "{{" in raw:
-        sys.exit("{} still has unfilled placeholders. Fill them from your stimulus\n"
-                 "first — validating a template tells you nothing about the reference statements you\n"
-                 "will actually rate with.".format(spec["reference_statements"]))
-    references = {k: v for k, v in json.loads(raw).items() if not k.startswith("_")}
+    stimulus_text = open(args.stimulus, encoding="utf-8").read().strip()
+    generated, generated_path = generate.load(args.scenario, stimulus_text)
+    if generated:
+        references = generated
+        source = os.path.relpath(generated_path, config.ROOT) + "  (written for this stimulus)"
+    else:
+        reference_path = os.path.join(config.ROOT, "reference-statements",
+                                      spec["reference_statements"])
+        raw = open(reference_path, encoding="utf-8").read()
+        if "{{" in raw:
+            sys.exit("{} still has unfilled placeholders, and no set has been written for\n"
+                     "this stimulus. Write one first:\n\n"
+                     "  python3 bin/synth-panel references --scenario {} --stimulus {}".format(
+                         spec["reference_statements"], args.scenario, args.stimulus))
+        references = {k: v for k, v in json.loads(raw).items() if not k.startswith("_")}
+        source = "reference-statements/" + spec["reference_statements"] + "  (shipped, generic)"
     questions = {a["key"]: a["question"] for a in spec["axes"]}
 
     directory, is_example = personas.pool_dir(use_examples=args.examples)
@@ -233,11 +245,12 @@ def main():
     if args.size > len(pool):
         sys.exit("Only {} personas match; --size {} cannot be drawn.".format(len(pool), args.size))
 
-    stimulus = open(args.stimulus, encoding="utf-8").read().strip()
+    stimulus = stimulus_text
 
     workers = args.size * args.reps
     calls = (workers + workers * len(references)) * args.runs
     print("scenario   : {} · axes {}".format(args.scenario, ", ".join(sorted(references))))
+    print("testing    : {}".format(source))
     print("personas   : {} from {}{}".format(
         args.size, os.path.relpath(directory, config.ROOT),
         "  (a worked example, not your buyers)" if is_example else ""))
@@ -269,11 +282,32 @@ def main():
         print("  pooled rho {:+.2f}  (n={}{})".format(
             result["pooled"], result["n"],
             ", {} answers unparsed".format(result["dropped"]) if result["dropped"] else ""))
-        for axis, (rho, n) in sorted(result["per_axis"].items(), key=lambda kv: -(kv[1][0] or -9)):
+        for axis, (rho, n) in sorted(result["per_axis"].items(),
+                                     key=lambda kv: -(kv[1][0] if kv[1][0] is not None else -9)):
+            if rho is None:
+                print("    {:<24} UNDEFINED (n={}) <- every persona answered the same way, so "
+                      "there is\n{:<28}nothing to correlate. This axis was not measured; the "
+                      "panel\n{:<28}has no disagreement on it for this stimulus.".format(
+                          axis, n, "", ""))
+                continue
             note = ""
-            if rho is not None and rho < 0.3:
+            if rho < 0.3:
                 note = "  <- asks about the artifact, not the respondent?"
-            print("    {:<24} {:+.2f}  (n={}){}".format(axis, rho if rho is not None else 0, n, note))
+            print("    {:<24} {:+.2f}  (n={}){}".format(axis, rho, n, note))
+
+    rhos = [o["pooled"] if o else None for o in outcomes]
+    if generated:
+        stamp = generate.record_gate(args.scenario, stimulus, rhos, GATE)
+        if stamp:
+            print("\nrecorded in {}".format(os.path.relpath(generated_path, config.ROOT)))
+
+    stalled = sorted({a for o in outcomes if o for a in o.get("undefined", [])})
+    if stalled:
+        print("\nNOT MEASURED: {}. Every persona gave the same answer, so there was no".format(
+            ", ".join(stalled)))
+        print("ordering to check. That is a fact about your panel and this stimulus, not")
+        print("about the reference statements — validate on something your personas would")
+        print("genuinely split on, or the gate is measuring half an instrument.")
 
     passing = [o for o in outcomes if o and o["pooled"] is not None and o["pooled"] >= GATE]
     print("\n" + "=" * 62)

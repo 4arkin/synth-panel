@@ -525,6 +525,12 @@ class TestValidationHarness(unittest.TestCase):
     def test_all_ties_is_undefined_not_a_fake_correlation(self):
         self.assertIsNone(self.v.spearman([1, 2, 3, 4], [3, 3, 3, 3]))
 
+    def test_no_variance_is_undefined_not_zero(self):
+        """All-tied referee scores mean the panel did not disagree. Reporting that
+        as 0.00 reads as a measurement of a bad rater when nothing was measured."""
+        self.assertIsNone(self.v.spearman([1.0, 2.0, 3.0, 4.0], [3, 3, 3, 3]))
+        self.assertIsNone(self.v.spearman([2.0, 2.0, 2.0], [1, 2, 3]))
+
     def test_gate_is_two_runs_at_070(self):
         self.assertEqual(self.v.GATE, 0.70)
 
