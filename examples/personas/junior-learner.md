@@ -7,7 +7,7 @@ current_situation: Wants depth, not hacks, and is honest when she does not follo
 current_alternative: Every newsletter and thread she can find, which contradict each other weekly.
 objection_pattern: Over-positioning and abstract jargon. Content that obviously assumes a company five times her size.
 skepticism: 3
-anchor_phrase: does this apply to a 30-person company
+signature_phrase: does this apply to a 30-person company
 grounding: hypothesis
 source: none — hypothesis, written from positioning material rather than from anything a real person said
 

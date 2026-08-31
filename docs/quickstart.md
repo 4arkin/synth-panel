@@ -17,13 +17,13 @@ in the part that matters. Interviews, pre-mortems and panels all run as-is, and 
 objections, the disagreement map and the line each persona stopped reading at.
 
 **One optional feature needs one.** Turning a persona's written answer into a 1–5 distribution — the SSR
-rating in `docs/anchors.md` — requires an embedding model, which is an HTTP call somewhere. That is the
+rating in `docs/reference-statements.md` — requires an embedding model, which is an HTTP call somewhere. That is the
 only external dependency in the repo, and it buys you ranking, not insight.
 
 | You have | What runs |
 |---|---|
 | an agent CLI | everything except distributions |
-| an agent CLI + an embedding provider | the above, plus ranked distributions on the scenarios that ship with anchors |
+| an agent CLI + an embedding provider | the above, plus ranked distributions on the scenarios that ship with reference statements |
 
 Any OpenAI-compatible `/embeddings` endpoint works; nothing is hard-coded to a vendor. A local Ollama
 satisfies it with no key and no bill. Configure it in `config.toml` under `[embedding]` and leave it empty

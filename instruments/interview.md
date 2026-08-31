@@ -25,5 +25,5 @@ the objection they did not quite say.
 
 ## No rating machinery
 
-Nothing is scored here, so no anchors, no embedding provider, no distributions, and none of the method's
+Nothing is scored here, so no reference statements, no embedding provider, no distributions, and none of the method's
 failure modes apply. This instrument runs identically whether or not you have an embedding provider.

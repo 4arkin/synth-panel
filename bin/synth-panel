@@ -48,8 +48,9 @@ def cmd_detect(args):
         print("UNTUNED: nobody has supplied {}'s flags for a small model and no".format(
             chosen["cli"]))
         print("tools, so personas will run on whatever it defaults to. A five-persona")
-        print("panel is five calls, all billed to you — check what that costs before")
-        print("a real run, then add the flags to [dispatch].command in config.local.toml.")
+        print("panel is five calls — on a subscription that is five times the usage,")
+        print("on API credits it is five times the bill. Add the flags to")
+        print("[dispatch].command in config.local.toml.")
     return 0
 
 
@@ -182,14 +183,14 @@ def cmd_panel(args):
     rated = [a["key"] for a in spec["axes"] if a["rated"]]
     embedding = cfg.get("embedding", {})
     has_embedding = bool(embedding.get("endpoint") and embedding.get("model"))
-    if not rated or spec["anchor_state"] == "none":
+    if not rated or spec["reference_state"] == "none":
         mode = "qualitative (no anchor set ships for this scenario)"
     elif not has_embedding:
         mode = "qualitative (no embedding provider configured)"
-    elif spec["anchor_state"] == "templated":
-        mode = "SSR — anchors TEMPLATED; fill from the stimulus, then nobody has checked them"
+    elif spec["reference_state"] == "templated":
+        mode = "SSR — reference statements TEMPLATED; fill from the stimulus, then nobody has checked them"
     else:
-        mode = "SSR ({}, checked anchors — see docs/anchors.md on what that is worth)".format(
+        mode = "SSR ({}, checked reference statements — see docs/reference-statements.md on what that is worth)".format(
             args.scenario)
 
     state = "Panel: {} personas · fidelity: {} · rating: {}".format(
@@ -225,7 +226,7 @@ def cmd_panel(args):
             fh.write(result["stdout"])
 
     payload = {"state": state, "scenario": args.scenario,
-               "anchor_state": spec["anchor_state"], "anchors": spec["anchors"],
+               "reference_state": spec["reference_state"], "reference_statements": spec["reference_statements"],
                "rated_axes": rated, "fidelity": personas.fidelity(roster),
                "example_pool": is_example, "notes": notes,
                "run_dir": os.path.relpath(run_dir, config.ROOT), "workers": workers}
@@ -252,22 +253,22 @@ def cmd_rate(args):
     run_path = os.path.join(args.run_dir, "run.json")
     with open(run_path, encoding="utf-8") as fh:
         payload = json.load(fh)
-    if not payload.get("anchors"):
-        print("Scenario '{}' ships no anchors — it is qualitative by design.".format(
+    if not payload.get("reference_statements"):
+        print("Scenario '{}' ships no reference statements — it is qualitative by design.".format(
             payload["scenario"]), file=sys.stderr)
         return 1
 
-    anchor_path = os.path.join(config.ROOT, "anchors", payload["anchors"])
-    with open(anchor_path, encoding="utf-8") as fh:
+    reference_path = os.path.join(config.ROOT, "reference-statements", payload["reference_statements"])
+    with open(reference_path, encoding="utf-8") as fh:
         raw = fh.read()
     if "{{" in raw and not args.force:
-        print("{} still has unfilled placeholders.".format(payload["anchors"]), file=sys.stderr)
+        print("{} still has unfilled placeholders.".format(payload["reference_statements"]), file=sys.stderr)
         print("Fill them from the stimulus, in the stimulus's own words, identically", file=sys.stderr)
         print("across all five statements of an axis. An anchor set whose top end echoes", file=sys.stderr)
         print("the stimulus while its bottom end does not will score skeptics as", file=sys.stderr)
-        print("enthusiasts — measured, not theoretical. See docs/anchors.md.", file=sys.stderr)
+        print("enthusiasts — measured, not theoretical. See docs/reference-statements.md.", file=sys.stderr)
         return 1
-    anchors = {k: v for k, v in json.loads(raw).items() if not k.startswith("_")}
+    references = {k: v for k, v in json.loads(raw).items() if not k.startswith("_")}
 
     os.environ.setdefault("SSR_EMBED_ENDPOINT", embedding["endpoint"])
     os.environ.setdefault("SSR_EMBED_MODEL", embedding["model"])
@@ -278,19 +279,19 @@ def cmd_rate(args):
 
     bimodal = []
     try:
-        _rate_workers(rate_mod, payload, anchors, bimodal)
+        _rate_workers(rate_mod, payload, references, bimodal)
     except rate_mod.EmbeddingError as exc:
         print(exc, file=sys.stderr)
         return 1
-    payload["rating_mode"] = "SSR ({}, {} anchors)".format(
-        payload["anchors"], payload["anchor_state"])
+    payload["rating_mode"] = "SSR ({}, {} reference statements)".format(
+        payload["reference_statements"], payload["reference_state"])
     with open(run_path, "w", encoding="utf-8") as fh:
         json.dump(payload, fh, indent=1, ensure_ascii=False)
     json.dump(payload, sys.stdout, indent=1, ensure_ascii=False)
     print()
 
-    if payload["anchor_state"] == "templated":
-        print("\nThese anchors were filled in from a template and nobody has checked them.",
+    if payload["reference_state"] == "templated":
+        print("\nThese reference statements were filled in from a template and nobody has checked them.",
               file=sys.stderr)
         print("Say so when you report the distributions.", file=sys.stderr)
     for slug, axis in bimodal:
@@ -300,13 +301,13 @@ def cmd_rate(args):
     return 0
 
 
-def _rate_workers(rate_mod, payload, anchors, bimodal):
+def _rate_workers(rate_mod, payload, references, bimodal):
     for slug, worker in payload["workers"].items():
         axes = (worker.get("parsed") or {}).get("axes") or {}
-        prose = {k: v for k, v in axes.items() if k in anchors and isinstance(v, str)}
+        prose = {k: v for k, v in axes.items() if k in references and isinstance(v, str)}
         if not prose:
             continue
-        worker["ratings"] = rate_mod.rate(prose, anchors)
+        worker["ratings"] = rate_mod.rate(prose, references)
         for axis, result in worker["ratings"].items():
             if result["bimodal"]:
                 bimodal.append((slug, axis))

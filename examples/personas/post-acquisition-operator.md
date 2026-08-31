@@ -7,7 +7,7 @@ current_situation: The CEO promised the board a unified go-to-market by Q3. She 
 current_alternative: Triage. Whichever brand shouts loudest that week.
 objection_pattern: Theory. She has no time for it and gravitates hard to anyone who has cleaned up this exact mess before.
 skepticism: 7
-anchor_phrase: show me you've cleaned this up before
+signature_phrase: show me you've cleaned this up before
 grounding: hypothesis
 source: none — hypothesis, written from positioning material rather than from anything a real person said
 

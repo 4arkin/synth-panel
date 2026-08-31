@@ -12,7 +12,7 @@ still get verdicts, objections and the disagreement map. Details in
 
 - [`AGENTS.md`](AGENTS.md) — the protocol your agent follows
 - [`docs/rules.md`](docs/rules.md) — four rules that are absolute
-- [`docs/anchors.md`](docs/anchors.md) — read before editing an anchor set
+- [`docs/reference-statements.md`](docs/reference-statements.md) — read before editing an reference set
 
 Method: **arXiv:2510.08338** (PyMC Labs and Colgate-Palmolive) for turning free text into ratings ·
 **arXiv:2406.20094** (Tencent AI Lab) for how personas are constructed. MIT licensed.

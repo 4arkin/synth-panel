@@ -14,7 +14,7 @@
 
 Their answer is what your packaging actually communicates, as opposed to what it says.
 
-## No anchors ship for this scenario
+## No reference statements ship for this scenario
 
 `would_pick` is a forced choice between options, not a position on a 1–5 scale, so SSR has nothing to
 rate — the answer is a name, and the ranking comes from counting names. `would_shortlist` has no anchor
@@ -40,8 +40,8 @@ The orchestrator reads this block. The prose above is for you.
 {
  "scenario": "packaging-choice",
  "instrument": "panel",
- "anchors": null,
- "anchor_state": "none",
+ "reference_statements": null,
+ "reference_state": "none",
  "per_item": "option",
  "verdicts": [
   "would pick this",

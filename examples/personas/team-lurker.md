@@ -7,7 +7,7 @@ current_situation: Sees the noise floor up close — roughly fifty recommendatio
 current_alternative: Forwarding nothing, mostly.
 objection_pattern: The same idea repackaged. She has read this week's version of most takes already.
 skepticism: 4
-anchor_phrase: would I send this to my Head of Marketing
+signature_phrase: would I send this to my Head of Marketing
 grounding: hypothesis
 source: none — hypothesis, written from positioning material rather than from anything a real person said
 

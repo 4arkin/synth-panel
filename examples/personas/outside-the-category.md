@@ -7,7 +7,7 @@ current_situation: Has never engaged anyone in this category and does not know t
 current_alternative: Not applicable — he is not in the market and does not know he might be.
 objection_pattern: Jargon. He asks what something actually means, rereads once, then leaves.
 skepticism: 7
-anchor_phrase: what does this actually mean
+signature_phrase: what does this actually mean
 grounding: hypothesis
 source: none — hypothesis, written from positioning material rather than from anything a real person said
 

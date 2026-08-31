@@ -7,7 +7,7 @@ current_situation: Scans roughly thirty voices a week looking for a quotable opi
 current_alternative: Writing about someone else.
 objection_pattern: Hedging. A consensus take, however well written, is not a story and she moves on within a paragraph.
 skepticism: 6
-anchor_phrase: is this quotable, or is this consensus
+signature_phrase: is this quotable, or is this consensus
 grounding: hypothesis
 source: none — hypothesis, written from positioning material rather than from anything a real person said
 

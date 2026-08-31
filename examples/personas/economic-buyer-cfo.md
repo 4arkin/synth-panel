@@ -7,7 +7,7 @@ current_situation: Marketing spend is up and pipeline is flat, and the board has
 current_alternative: An inherited retainer nobody has cancelled because nobody can prove it is doing nothing.
 objection_pattern: Soft language with no number attached. He asks for definitions of words like 'system' and will not engage with abstractions.
 skepticism: 8
-anchor_phrase: by when, for how much, in what unit
+signature_phrase: by when, for how much, in what unit
 grounding: hypothesis
 source: none — hypothesis, written from positioning material rather than from anything a real person said
 

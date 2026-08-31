@@ -314,7 +314,7 @@ class TestPersonas(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             path = os.path.join(tmp, "thin.md")
             open(path, "w").write("# thin\n\nname: Nobody\n")
-            self.assertIn("anchor_phrase", personas.parse(path)["missing"])
+            self.assertIn("signature_phrase", personas.parse(path)["missing"])
 
 
 class TestCompose(unittest.TestCase):
@@ -371,21 +371,21 @@ class TestScenariosAndPrompts(unittest.TestCase):
             for axis in spec["axes"]:
                 self.assertTrue(axis["key"] and axis["question"])
 
-    def test_rated_axes_have_anchors_and_unrated_ones_do_not(self):
-        """A scenario may never claim to rate an axis it has no anchor set for."""
+    def test_rated_axes_have_reference_statements_and_unrated_ones_do_not(self):
+        """A scenario may never claim to rate an axis it has no reference set for."""
         for slug in prompt.available():
             spec = prompt.scenario(slug)
             rated = [a["key"] for a in spec["axes"] if a["rated"]]
             if not rated:
-                self.assertIsNone(spec["anchors"], slug)
+                self.assertIsNone(spec["reference_statements"], slug)
                 continue
-            path = os.path.join(ROOT, "anchors", spec["anchors"])
-            anchors = json.load(open(path))
+            path = os.path.join(ROOT, "reference-statements", spec["reference_statements"])
+            references = json.load(open(path))
             for key in rated:
-                self.assertIn(key, anchors, "{}: {}".format(slug, key))
+                self.assertIn(key, references, "{}: {}".format(slug, key))
 
-    def test_every_anchor_axis_has_exactly_five_statements(self):
-        for path in glob.glob(os.path.join(ROOT, "anchors", "*.json")):
+    def test_every_axis_has_exactly_five_reference_statements(self):
+        for path in glob.glob(os.path.join(ROOT, "reference-statements", "*.json")):
             data = json.load(open(path))
             axes = [k for k in data if not k.startswith("_")]
             self.assertTrue(axes, path)
@@ -394,12 +394,12 @@ class TestScenariosAndPrompts(unittest.TestCase):
                 for statement in data[axis]:
                     self.assertTrue(statement.strip())
 
-    def test_templated_anchors_are_declared_as_templated(self):
-        """An anchor file with placeholders must not be presented as ready to use."""
-        for path in glob.glob(os.path.join(ROOT, "anchors", "*.json")):
+    def test_templated_reference_sets_are_declared_as_templated(self):
+        """A reference set with placeholders must not be presented as ready to use."""
+        for path in glob.glob(os.path.join(ROOT, "reference-statements", "*.json")):
             has_placeholder = "{{" in open(path).read()
-            slug = os.path.basename(path)[len("anchors-"):-len(".json")]
-            state = prompt.scenario(slug)["anchor_state"]
+            slug = os.path.basename(path)[:-len(".json")]
+            state = prompt.scenario(slug)["reference_state"]
             self.assertEqual(has_placeholder, state == "templated", path)
 
     def test_build_fills_every_slot(self):
@@ -407,13 +407,13 @@ class TestScenariosAndPrompts(unittest.TestCase):
         for slug in prompt.available():
             text = prompt.build(pool[0], prompt.scenario(slug), "STIMULUS")
             self.assertNotIn("{{", text, slug)
-            self.assertIn(pool[0]["anchor_phrase"], text)
+            self.assertIn(pool[0]["signature_phrase"], text)
             self.assertIn("STIMULUS", text)
 
     def test_incomplete_persona_raises_rather_than_reaching_a_worker(self):
         pool = personas.load_dir(os.path.join(ROOT, "examples", "personas"))
         broken = dict(pool[0])
-        del broken["anchor_phrase"]
+        del broken["signature_phrase"]
         with self.assertRaises(ValueError):
             prompt.build(broken, prompt.scenario("offer-pricing"), "x")
 
@@ -453,9 +453,9 @@ class TestRater(unittest.TestCase):
 
     def test_rates_against_a_provider_that_is_not_openai(self):
         """End to end through the real rater, no vendor and no API key involved."""
-        anchors = json.load(open(os.path.join(ROOT, "anchors", "anchors-concept-screening.json")))
-        anchors = {k: v for k, v in anchors.items() if not k.startswith("_")}
-        out = self.rate.rate({"jtbd_fit": "This is exactly the job I have."}, anchors)
+        references = json.load(open(os.path.join(ROOT, "reference-statements", "concept-screening.json")))
+        references = {k: v for k, v in references.items() if not k.startswith("_")}
+        out = self.rate.rate({"jtbd_fit": "This is exactly the job I have."}, references)
         self.assertIn("jtbd_fit", out)
         self.assertAlmostEqual(sum(out["jtbd_fit"]["pmf"]), 1.0, places=3)
         self.assertIn("bimodal", out["jtbd_fit"])
@@ -497,7 +497,7 @@ class TestRater(unittest.TestCase):
 
 
 class TestValidationHarness(unittest.TestCase):
-    """The gate docs/anchors.md sends users to. It has to ship and it has to be right."""
+    """The gate docs/reference-statements.md sends users to. It has to ship and it has to be right."""
 
     @classmethod
     def setUpClass(cls):
@@ -528,7 +528,7 @@ class TestValidationHarness(unittest.TestCase):
     def test_gate_is_two_runs_at_070(self):
         self.assertEqual(self.v.GATE, 0.70)
 
-    def test_refuses_a_scenario_with_no_anchors(self):
+    def test_refuses_a_scenario_with_no_reference_statements(self):
         result = subprocess.run(
             [sys.executable, os.path.join(ROOT, "tools", "validate.py"),
              "--scenario", "packaging-choice", "--stimulus", os.devnull, "--yes"],
@@ -600,11 +600,11 @@ class TestEndToEnd(unittest.TestCase):
                            "--stimulus", self.stimulus, "--examples")
         self.assertNotEqual(result.returncode, 0)
 
-    def test_rate_refuses_templated_anchors(self):
+    def test_rate_refuses_templated_reference_sets(self):
         run_dir = os.path.join(self.tmp, "run")
         os.makedirs(run_dir)
-        json.dump({"scenario": "offer-pricing", "anchors": "anchors-offer-pricing.json",
-                   "anchor_state": "templated", "workers": {}},
+        json.dump({"scenario": "offer-pricing", "reference_statements": "offer-pricing.json",
+                   "reference_state": "templated", "workers": {}},
                   open(os.path.join(run_dir, "run.json"), "w"))
         open(self.local, "a").write(
             '\n[embedding]\nendpoint = "http://127.0.0.1:1/v1/embeddings"\nmodel = "x"\n')

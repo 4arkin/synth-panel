@@ -7,7 +7,7 @@ current_situation: Advises two or three companies a year on building the functio
 current_alternative: Hiring in-house, which she usually recommends.
 objection_pattern: Framework-only people. She has hired this profile before and knows exactly where it stops delivering.
 skepticism: 9
-anchor_phrase: diagnostic guy or execution guy — which one is he
+signature_phrase: diagnostic guy or execution guy — which one is he
 grounding: hypothesis
 source: none — hypothesis, written from positioning material rather than from anything a real person said
 

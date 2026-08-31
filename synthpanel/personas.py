@@ -10,7 +10,7 @@ import os
 from . import config
 
 FIELDS = ("name", "cluster", "role_and_context", "current_situation",
-          "current_alternative", "objection_pattern", "skepticism", "anchor_phrase")
+          "current_alternative", "objection_pattern", "skepticism", "signature_phrase")
 OPTIONAL = ("grounding", "source")
 SKEPTIC_AT = 7
 

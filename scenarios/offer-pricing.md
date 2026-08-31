@@ -1,7 +1,7 @@
 # Scenario · offer-pricing
 
 **Instrument:** panel · **Input:** an offer, optionally several framings of the same offer.
-**Rating:** SSR on four axes once anchors are filled, free text on the fifth.
+**Rating:** SSR on four axes once reference statements are filled, free text on the fifth.
 
 ## Ask each persona, one answer per question
 
@@ -23,8 +23,8 @@ two modes instead. **When it fires, report both modes in words** — "wants the 
 
 ## Before you rate anything
 
-`anchors/anchors-offer-pricing.json` is **templated**. Fill `{{outcome}}` and `{{timeline}}` from the offer's
-own words, in the same register at all five scale points. Anchors whose positive end echoes the offer's
+`reference-statements/offer-pricing.json` is **templated**. Fill `{{outcome}}` and `{{timeline}}` from the offer's
+own words, in the same register at all five scale points. Reference statements whose positive end echoes the offer's
 vocabulary while the negative end does not will score skeptics as enthusiasts — measured, not theoretical.
 Once you fill it, nobody has checked it — including us. Say so in the output.
 
@@ -40,8 +40,8 @@ The orchestrator reads this block. The prose above is for you.
 {
  "scenario": "offer-pricing",
  "instrument": "panel",
- "anchors": "anchors-offer-pricing.json",
- "anchor_state": "templated",
+ "reference_statements": "offer-pricing.json",
+ "reference_state": "templated",
  "per_item": "framing",
  "verdicts": [
   "yes",

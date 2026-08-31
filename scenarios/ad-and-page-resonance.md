@@ -16,11 +16,11 @@
 That line is the highest-value thing this scenario produces. A distribution tells you the copy underperforms;
 the stopped-at line tells you which sentence did it.
 
-## Anchors
+## Reference statements
 
-`anchors/anchors-ad-and-page-resonance.json`. Checked twice, and the least stable set in the repo — the two
+`reference-statements/ad-and-page-resonance.json`. Checked twice, and the least stable set in the repo — the two
 runs disagreed with each other by a wide margin. Treat its distributions as coarser than the
-concept-screening ones, and read `docs/anchors.md` before leaning on either.
+concept-screening ones, and read `docs/reference-statements.md` before leaning on either.
 
 ## Return
 
@@ -34,8 +34,8 @@ The orchestrator reads this block. The prose above is for you.
 {
  "scenario": "ad-and-page-resonance",
  "instrument": "panel",
- "anchors": "anchors-ad-and-page-resonance.json",
- "anchor_state": "checked",
+ "reference_statements": "ad-and-page-resonance.json",
+ "reference_state": "checked",
  "per_item": "variant",
  "verdicts": [
   "would act",

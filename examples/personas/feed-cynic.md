@@ -7,7 +7,7 @@ current_situation: Has seen every variation of every marketing-coded post, and r
 current_alternative: Scrolling.
 objection_pattern: Anything that reads as generated or as positioning. He will quote the specific line that gave it away.
 skepticism: 9
-anchor_phrase: scrolled past 10,000 of these
+signature_phrase: scrolled past 10,000 of these
 grounding: hypothesis
 source: none — hypothesis, written from positioning material rather than from anything a real person said
 

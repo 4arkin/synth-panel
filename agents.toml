@@ -17,11 +17,26 @@
 #                means it already reads the protocol and detect leaves it alone
 #   notes        where the above came from, and what is still unknown
 #
-# WHY TUNING MATTERS: a five-persona panel is five separate calls, all billed to
-# you. Measured on the one CLI exercised here, same prompt: $0.2591 on its
-# default model, $0.0417 on its small one. Personas do not need a frontier model
-# and have nothing to look up, and a persona that cannot read a file cannot read
-# yours.
+# WHY TUNING MATTERS. A five-persona panel is five separate calls to your agent
+# CLI. What that costs depends on how that CLI is authenticated, and the two
+# cases are genuinely different:
+#
+#   on a subscription   the calls consume your normal usage and count against
+#                       your rate limits. No separate bill arrives. Five personas
+#                       is five times the usage of one, so a cheap model buys you
+#                       headroom rather than money.
+#   on API credits      the calls cost actual money at that model's rate.
+#
+# Measured on the one CLI exercised here, same prompt, as an equivalent-dollar
+# figure the CLI itself reports: $0.2591 on its default model, $0.0417 on its
+# small one. On a subscription that is a usage ratio, not an invoice.
+#
+# Personas do not need a frontier model and have nothing to look up, and a
+# persona that cannot read a file cannot read yours.
+#
+# The ONE thing that is always a separate account and a separate bill is the
+# embedding provider in config.toml, and it is optional — without it the panel
+# runs qualitatively. Nothing else here requires an API key.
 #
 # EVERYTHING BELOW EXCEPT [claude] IS READ FROM VENDOR DOCUMENTATION, NOT RUN.
 # The author had only one of these installed. `synth-panel doctor` settles any

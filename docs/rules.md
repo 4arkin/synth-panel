@@ -26,7 +26,7 @@ evidence that the failing ones fail, which is the direction that matters here.
 
 The cause is structural. A critique of an artifact is dominated by the artifact's own vocabulary, so the
 speaker's stance becomes a rounding error in the embedding. It is not a wording problem and cannot be
-fixed by writing better anchors.
+fixed by writing better reference statements.
 
 **If the user asks for an artifact rating, reframe it to behaviour and tell them you did.** "Rate my copy"
 becomes `packaging-choice` or `ad-and-page-resonance`. Refusing well is why the rest is believable.
@@ -60,7 +60,7 @@ run an ICP exercise first, or talk to a real human.
 directory. One model playing five people in one context cannot disagree with itself in any way that means
 anything, and no prompt fixes that. `synthpanel/dispatch.py` owns this.
 
-**State the mode, every time.** Whether SSR ran or the panel was qualitative; whether the anchor set was
+**State the mode, every time.** Whether SSR ran or the panel was qualitative; whether the reference set was
 checked, filled-in but unchecked, or absent; where each persona sits on the fidelity ladder. The label is part of the
 output, not a footnote to it.
 

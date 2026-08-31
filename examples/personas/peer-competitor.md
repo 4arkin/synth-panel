@@ -7,7 +7,7 @@ current_situation: Competitive in the analytical sense, not the bitter one. He i
 current_alternative: His own practice, built on the same claims.
 objection_pattern: Claims that apply to every consultant in the segment. He finds the differentiator in a subclause, or decides there is not one.
 skepticism: 9
-anchor_phrase: what specifically distinguishes him from me
+signature_phrase: what specifically distinguishes him from me
 grounding: hypothesis
 source: none — hypothesis, written from positioning material rather than from anything a real person said
 

@@ -7,7 +7,7 @@ current_situation: Does not care about the category and will not pretend to.
 current_alternative: Not reading it.
 objection_pattern: Voice drift. If the writing sounds like a different person than the one he talks to, he says so immediately and without tact.
 skepticism: 8
-anchor_phrase: you don't talk like this
+signature_phrase: you don't talk like this
 grounding: hypothesis
 source: none — hypothesis, written from positioning material rather than from anything a real person said
 

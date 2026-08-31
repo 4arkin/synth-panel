@@ -7,7 +7,7 @@ current_situation: Knows exactly which of today's choices paid off and which wer
 current_alternative: Both futures are visible from here: the one where it shipped, and the one where the description of it kept getting refined.
 objection_pattern: Polishing mistaken for progress. Refining the framing of the build instead of building.
 skepticism: 9
-anchor_phrase: is this the version that earns it, or the version that polishes it
+signature_phrase: is this the version that earns it, or the version that polishes it
 grounding: hypothesis
 source: none — hypothesis, written from positioning material rather than from anything a real person said
 

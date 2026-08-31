@@ -7,7 +7,7 @@ current_situation: Market signal is real and growing, but there is no marketing 
 current_alternative: Two prior consultants. One was a content factory with no strategy, the other was frameworks with no execution. Now: nothing, and him doing it badly at midnight.
 objection_pattern: Anything that sounds like the pitch he has already heard twice. Fluff gets contradicted directly, in the first two minutes.
 skepticism: 8
-anchor_phrase: I've heard this pitch before
+signature_phrase: I've heard this pitch before
 grounding: hypothesis
 source: none — hypothesis, written from positioning material rather than from anything a real person said
 

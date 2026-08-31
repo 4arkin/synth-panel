@@ -7,7 +7,7 @@ current_situation: First three customers came from cold DMs. The next ten will n
 current_alternative: Reading everything, trusting almost none of it, executing whichever tactic he read most recently.
 objection_pattern: Advice calibrated for companies five stages ahead of his. He asks 'but what about my stage' reflexively and means it.
 skepticism: 6
-anchor_phrase: does this apply if my MRR has one comma, not two
+signature_phrase: does this apply if my MRR has one comma, not two
 grounding: hypothesis
 source: none — hypothesis, written from positioning material rather than from anything a real person said
 

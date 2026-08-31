@@ -36,7 +36,7 @@ planned for.
 ## Ground every persona you can
 
 At least one **verbatim line** from a real source per persona, where a real source exists. Quote it in the
-persona file. A persona with no verbatim anchor is marked `hypothesis` and carries that label into every
+persona file. A persona with no verbatim reference statement is marked `hypothesis` and carries that label into every
 output it appears in.
 
 This is the user's lever, not the tool's. The tool cannot manufacture validity. It can only be honest about
@@ -61,12 +61,12 @@ current_situation: <what they are dealing with right now>
 current_alternative: <what they use for this today — the real competitor is usually this, not a product>
 objection_pattern: <what makes them say no>
 skepticism: <1-10>
-anchor_phrase: "<something they would actually say, verbatim from source if you have one>"
+signature_phrase: "<something they would actually say, verbatim from source if you have one>"
 grounding: evidence-anchored | hypothesis
 source: <where the verbatim line came from, or "none — hypothesis">
 ```
 
-The fields map slot-for-slot onto `prompts/worker.md`. `anchor_phrase` is load-bearing: the worker is told
+The fields map slot-for-slot onto `prompts/worker.md`. `signature_phrase` is load-bearing: the worker is told
 to use it verbatim, and its absence from the returned reaction is how you detect a persona that drifted
 into generic-assistant voice mid-answer.
 

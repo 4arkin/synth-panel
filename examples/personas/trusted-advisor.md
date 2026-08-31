@@ -7,7 +7,7 @@ current_situation: Cuts through positioning inside two paragraphs and states opi
 current_alternative: 'Heard. Next.' — the default, and it costs him nothing.
 objection_pattern: Filler, and the third instance this week of a phrase he has now seen too often.
 skepticism: 9
-anchor_phrase: I've seen this pitch in seventeen forms
+signature_phrase: I've seen this pitch in seventeen forms
 grounding: hypothesis
 source: none — hypothesis, written from positioning material rather than from anything a real person said
 

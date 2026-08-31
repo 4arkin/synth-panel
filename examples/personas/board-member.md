@@ -7,7 +7,7 @@ current_situation: Slightly weary. He has watched hundreds of these arrive throu
 current_alternative: Saying no, which costs him nothing.
 objection_pattern: Theatre. He is more skeptical of the CEO's enthusiasm than of the pitch itself.
 skepticism: 8
-anchor_phrase: serious, or marketing theatre
+signature_phrase: serious, or marketing theatre
 grounding: hypothesis
 source: none — hypothesis, written from positioning material rather than from anything a real person said
 

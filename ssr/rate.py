@@ -1,9 +1,16 @@
 #!/usr/bin/env python3
 """SSR rater — free text -> Likert distribution. Stdlib only.
 
+TERMINOLOGY. The five sentences an answer is compared against, one per scale
+point, are REFERENCE STATEMENTS. That is the term used in arXiv:2510.08338,
+whose abstract describes SSR as mapping responses "to Likert distributions using
+embedding similarity to reference statements". Earlier versions of this code
+called them "references", which is ordinary survey vocabulary but is NOT the
+paper's word, and using it made the method harder to check against its source.
+
 Usage:
   echo '{"perceived_likelihood": "I am skeptical this ships in a month."}' \
-    | python3 rate.py anchors-offers.json
+    | python3 rate.py references-offers.json
 
 Reads one JSON object of {axis: free-text} on stdin, writes
 {axis: {pmf, expected, bimodal, modes}} on stdout.
@@ -89,11 +96,11 @@ def bimodal(p):
         return True, [1 + p.index(max(p[:2])), 4 + p[3:].index(max(p[3:]))]
     return False, []
 
-def rate(responses, anchors):
-    axes = [a for a in responses if a in anchors]
+def rate(responses, references):
+    axes = [a for a in responses if a in references]
     flat, idx = [], {}
     for ax in axes:
-        for i, s in enumerate(anchors[ax]):
+        for i, s in enumerate(references[ax]):
             idx[(ax, i)] = len(flat); flat.append(s)
     vecs = embed(flat + [responses[ax] for ax in axes])
     av, rv = vecs[:len(flat)], vecs[len(flat):]
@@ -113,9 +120,9 @@ def rate(responses, anchors):
     return out
 
 if __name__ == "__main__":
-    anchors = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), sys.argv[1])))
+    references = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), sys.argv[1])))
     try:
-        json.dump(rate(json.load(sys.stdin), anchors), sys.stdout, indent=1)
+        json.dump(rate(json.load(sys.stdin), references), sys.stdout, indent=1)
     except EmbeddingError as exc:
         print(exc, file=sys.stderr)
         sys.exit(1)

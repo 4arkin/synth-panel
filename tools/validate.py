@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check an anchor set before you trust a distribution from it.
+"""Check a set of reference statements before you trust a distribution from it.
 
     python3 tools/validate.py --scenario concept-screening --stimulus ./concepts.md
 
@@ -8,9 +8,9 @@ personas, the same worker prompts, the same subprocess dispatch a panel uses —
 then scores every answer twice:
 
     SSR      the rater under test: embed the answer, compare against the five
-             anchors, take the expected value
-    referee  a second model shown THE SAME FIVE ANCHORS and asked which one the
-             speaker is closest to
+             references, take the expected value
+    referee  a second model shown THE SAME FIVE REFERENCE STATEMENTS, asked which
+             one the speaker is closest to
 
 and reports the rank correlation between them, pooled and per axis.
 
@@ -27,7 +27,7 @@ lowering it defeats the purpose.
 
 Per-axis numbers are the real diagnostic. An axis near zero or negative is asking
 about the ARTIFACT rather than the respondent, and no rewording fixes that — see
-docs/anchors.md.
+docs/reference-statements.md.
 """
 import argparse
 import json
@@ -125,11 +125,11 @@ def elicit(cfg, roster, spec, stimulus, reps):
     return cells, dropped
 
 
-def referee(cfg, cells, anchors, questions):
-    """Score the same answers with a model shown the same anchors."""
+def referee(cfg, cells, references, questions):
+    """Score the same answers with a model shown the same five reference statements."""
     jobs = {}
     for index, (axis, prose) in enumerate(cells):
-        options = "\n".join("{}. {}".format(i + 1, s) for i, s in enumerate(anchors[axis]))
+        options = "\n".join("{}. {}".format(i + 1, s) for i, s in enumerate(references[axis]))
         jobs[str(index)] = REFEREE.format(
             question=questions.get(axis, axis), answer=prose.replace('"', "'"),
             options=options)
@@ -147,14 +147,14 @@ def referee(cfg, cells, anchors, questions):
     return scores
 
 
-def one_run(cfg, rater, roster, spec, stimulus, anchors, questions, reps):
+def one_run(cfg, rater, roster, spec, stimulus, references, questions, reps):
     cells, dropped = elicit(cfg, roster, spec, stimulus, reps)
-    cells = [(axis, prose) for axis, prose in cells if axis in anchors]
+    cells = [(axis, prose) for axis, prose in cells if axis in references]
     if not cells:
         return None, "no ratable answers came back"
 
     # Batch across axes: rate() takes one answer per axis, so a call can carry one
-    # cell from each axis at once. Every call re-embeds the anchors, so grouping
+    # cell from each axis at once. Every call re-embeds the reference statements, so grouping
     # cuts the embedding bill by roughly the number of axes.
     buckets = {}
     for index, (axis, prose) in enumerate(cells):
@@ -164,7 +164,7 @@ def one_run(cfg, rater, roster, spec, stimulus, anchors, questions, reps):
         batch = {axis: rows[position][1] for axis, rows in buckets.items()
                  if position < len(rows)}
         try:
-            rated = rater.rate(batch, anchors)
+            rated = rater.rate(batch, references)
         except rater.EmbeddingError as exc:
             return None, str(exc)
         for axis, result in rated.items():
@@ -174,7 +174,7 @@ def one_run(cfg, rater, roster, spec, stimulus, anchors, questions, reps):
             # toward the answers that happened to be single-stance.
             ssr[index] = sum((k + 1) * p for k, p in enumerate(result["pmf"]))
 
-    ref = referee(cfg, cells, anchors, questions)
+    ref = referee(cfg, cells, references, questions)
     paired = sorted(set(ssr) & set(ref))
     if len(paired) < 3:
         return None, "only {} cells scored by both raters".format(len(paired))
@@ -197,6 +197,12 @@ def main():
     parser.add_argument("--runs", type=int, default=2, help="independent runs; 2 is the gate")
     parser.add_argument("--examples", action="store_true",
                         help="validate against the worked example pool")
+    parser.add_argument("--cluster", action="append",
+                        help="restrict the panel to these persona clusters (repeatable). "
+                             "A rated scenario needs plausible respondents: asking an "
+                             "outsider persona whether something maps to a job they are "
+                             "doing produces a critique of the artifact, which this "
+                             "method cannot rate.")
     parser.add_argument("--yes", action="store_true", help="skip the cost confirmation")
     args = parser.parse_args()
 
@@ -204,35 +210,41 @@ def main():
     if not cfg["dispatch"]["command"]:
         sys.exit("No dispatch command. Run `synth-panel detect` first.")
     spec = prompt.scenario(args.scenario)
-    if not spec["anchors"]:
-        sys.exit("Scenario '{}' ships no anchor set — it is qualitative by design, and\n"
+    if not spec["reference_statements"]:
+        sys.exit("Scenario '{}' ships no reference statements — it is qualitative by design, and\n"
                  "there is nothing here to validate.".format(args.scenario))
 
-    anchor_path = os.path.join(config.ROOT, "anchors", spec["anchors"])
-    raw = open(anchor_path, encoding="utf-8").read()
+    reference_path = os.path.join(config.ROOT, "reference-statements", spec["reference_statements"])
+    raw = open(reference_path, encoding="utf-8").read()
     if "{{" in raw:
         sys.exit("{} still has unfilled placeholders. Fill them from your stimulus\n"
-                 "first — validating a template tells you nothing about the anchors you\n"
-                 "will actually rate with.".format(spec["anchors"]))
-    anchors = {k: v for k, v in json.loads(raw).items() if not k.startswith("_")}
+                 "first — validating a template tells you nothing about the reference statements you\n"
+                 "will actually rate with.".format(spec["reference_statements"]))
+    references = {k: v for k, v in json.loads(raw).items() if not k.startswith("_")}
     questions = {a["key"]: a["question"] for a in spec["axes"]}
 
     directory, is_example = personas.pool_dir(use_examples=args.examples)
     pool = personas.load_dir(directory)
+    if args.cluster:
+        wanted = {c.lower() for c in args.cluster}
+        pool = [p for p in pool if (p.get("cluster") or "").lower() in wanted]
     if not pool:
         sys.exit("No personas. Build them first, or pass --examples.")
+    if args.size > len(pool):
+        sys.exit("Only {} personas match; --size {} cannot be drawn.".format(len(pool), args.size))
 
     stimulus = open(args.stimulus, encoding="utf-8").read().strip()
 
     workers = args.size * args.reps
-    calls = (workers + workers * len(anchors)) * args.runs
-    print("scenario   : {} · axes {}".format(args.scenario, ", ".join(sorted(anchors))))
+    calls = (workers + workers * len(references)) * args.runs
+    print("scenario   : {} · axes {}".format(args.scenario, ", ".join(sorted(references))))
     print("personas   : {} from {}{}".format(
         args.size, os.path.relpath(directory, config.ROOT),
         "  (a worked example, not your buyers)" if is_example else ""))
     print("plan       : {} runs x ({} answers + {} referee calls)".format(
-        args.runs, workers, workers * len(anchors)))
-    print("dispatches : ~{} agent calls, all billed to you, plus embeddings".format(calls))
+        args.runs, workers, workers * len(references)))
+    print("dispatches : ~{} agent calls (subscription usage, or credits if your CLI".format(calls))
+    print("             is on API billing), plus a few cents of embeddings")
     if args.runs < 2:
         print("\nWARNING: one run is not evidence. A set has scored 0.53 and then 0.70")
         print("with nothing changed. --runs 2 is the gate for a reason.")
@@ -248,7 +260,7 @@ def main():
     for run_index in range(args.runs):
         roster, _ = compose.compose(pool, size=args.size, record=False, seed=run_index)
         print("\nrun {} · {}".format(run_index + 1, ", ".join(p["slug"] for p in roster)))
-        result, error = one_run(cfg, rater, roster, spec, stimulus, anchors, questions, args.reps)
+        result, error = one_run(cfg, rater, roster, spec, stimulus, references, questions, args.reps)
         if error:
             print("  failed: {}".format(error))
             outcomes.append(None)
@@ -267,13 +279,13 @@ def main():
     print("\n" + "=" * 62)
     if len(passing) == args.runs and args.runs >= 2:
         print("PASS — {} of {} runs cleared {:.2f}.".format(len(passing), args.runs, GATE))
-        print("These anchors are checked against a model referee on this stimulus.")
+        print("These references are checked against a model referee on this stimulus.")
         print("No human graded them. Say that when you report a distribution.")
     else:
         print("NOT PASSED — {} of {} runs cleared {:.2f}.".format(
             len(passing), args.runs, GATE))
-        print("Do not ship distributions from this set. Either rework the anchors")
-        print("(docs/anchors.md, the anchor law) or drop the axis to free text.")
+        print("Do not ship distributions from this set. Either rework the references")
+        print("(docs/reference-statements.md, the wording law) or drop the axis to free text.")
         print("An axis that fails on every rewording is asking about the artifact.")
     return 0 if len(passing) == args.runs and args.runs >= 2 else 1
 

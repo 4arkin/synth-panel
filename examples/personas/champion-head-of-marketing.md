@@ -7,7 +7,7 @@ current_situation: The pitch keeps changing. She knows the product cold and need
 current_alternative: Her own effort, plus whatever the last agency left behind.
 objection_pattern: Anything she cannot defend to a CFO who knows nothing about marketing and a CEO who wants results in ninety days.
 skepticism: 4
-anchor_phrase: how will I explain this to the CFO
+signature_phrase: how will I explain this to the CFO
 grounding: hypothesis
 source: none — hypothesis, written from positioning material rather than from anything a real person said
 
