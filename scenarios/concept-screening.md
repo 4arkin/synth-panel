@@ -26,9 +26,10 @@ response, and the ranking you came for disappears into it.
 
 ## Anchors
 
-`anchors/anchors-concept-screening.json`. `jtbd_fit` and `would_pay` are validated and generic — they
-carry no stimulus vocabulary, so they transfer to your concepts unchanged. `would_switch` has no
-validated set; do not invent one to make the output look complete.
+`anchors/anchors-concept-screening.json`. `jtbd_fit` and `would_pay` are generic — they name no specific
+product, so they carry over to your concepts unchanged. They have been checked once against a model
+referee, on somebody else's material; read `docs/anchors.md` on what that is and is not worth.
+`would_switch` has no anchor set at all; do not invent one to make the output look complete.
 
 ## Machine-readable
 
@@ -39,7 +40,7 @@ The orchestrator reads this block. The prose above is for you.
  "scenario": "concept-screening",
  "instrument": "panel",
  "anchors": "anchors-concept-screening.json",
- "anchor_state": "validated",
+ "anchor_state": "checked",
  "per_item": "concept",
  "verdicts": [
   "would use it",

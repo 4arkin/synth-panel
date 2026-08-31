@@ -1,26 +1,35 @@
-{"_provenance": "TEMPLATED, and this matters. The source set validated at rho +0.73 (2026-08-18) carried the stimulus's own vocabulary at every scale point, because that is the anchor law: only stance may vary between the five statements. That makes the validated wording specific to the offer it was validated on. The placeholders below are the parts that were stimulus-bound. Fill them from YOUR offer before rating, keeping the register identical across all five statements of an axis. A filled set is DERIVED, not validated — the rho above does not transfer to your wording. Validate it with tools/validate.py before you trust a distribution. would_pay_at_price has no validated set and is collected as free text.",
-"_placeholders": {"{{outcome}}": "the offer's promised outcome, in the offer's own words, one noun phrase", "{{timeline}}": "the offer's stated timeline, in the offer's own words, e.g. 'one-month'"},
-"dream_outcome":[
- "This outcome is not what I want. {{outcome}} solves nothing I actually care about.",
- "This outcome is only marginally interesting to me. It is not what I am trying to achieve right now.",
- "This outcome is partly relevant to me, but I would not prioritise it over what I am already doing.",
- "This outcome is close to what I am trying to achieve. {{outcome}} is roughly what I need.",
- "This outcome is exactly what I want. {{outcome}} is precisely what I am trying to achieve."],
-"believability":[
- "I do not believe they can deliver this in {{timeline}}. It reads as fantasy and there is no evidence behind it.",
- "I am skeptical this can be delivered as described. Too much of it is unproven for me to believe it.",
- "It might be deliverable as described, but I cannot tell from what is in front of me.",
- "I can see how they would deliver this as described. It is plausible to me.",
- "I am confident they can deliver exactly this, in that timeframe, as described."],
-"time_tolerance":[
- "The {{timeline}} timeline does not work for me. It is either far too long or suspiciously fast.",
- "The {{timeline}} timeline is a problem for me. It does not fit how I actually operate.",
- "The {{timeline}} timeline is borderline for me. I would have to think about whether it fits.",
- "The {{timeline}} timeline works for my situation. That pace fits how I operate.",
- "The {{timeline}} timeline is exactly right for me. That is realistic and well matched to what I need."],
-"effort_acceptance":[
- "What this asks of me beyond money is unacceptable. The time and access required are more than I will give.",
- "What this asks of me beyond money is too much. The demands on my time and attention are too high.",
- "What this asks of me beyond money is unclear. I would need to know more about what is required of me.",
- "What this asks of me beyond money is manageable. The time and access required are a fair trade.",
- "What this asks of me beyond money is minimal. The effort required of me is small and clearly worth it."]}
+{
+ "_provenance": "TEMPLATED, and this matters. The anchor law says all five statements of an axis must share the stimulus's own topic vocabulary and vary only in stance — which makes any wording that satisfies it specific to the offer it was written for. The placeholders below are the parts that were offer-bound. Fill them from YOUR offer, keeping the register identical across all five statements. ONCE YOU FILL IT, NOBODY HAS CHECKED IT, INCLUDING US: whatever the original wording was worth belongs to the original wording. Run the gate in ssr/validate.md on your filled set before you trust a distribution from it. would_pay_at_price has no anchor set and is collected as free text.",
+ "_placeholders": {
+  "{{outcome}}": "the offer's promised outcome, in the offer's own words, one noun phrase",
+  "{{timeline}}": "the offer's stated timeline, in the offer's own words, e.g. 'one-month'"
+ },
+ "dream_outcome": [
+  "This outcome is not what I want. {{outcome}} solves nothing I actually care about.",
+  "This outcome is only marginally interesting to me. It is not what I am trying to achieve right now.",
+  "This outcome is partly relevant to me, but I would not prioritise it over what I am already doing.",
+  "This outcome is close to what I am trying to achieve. {{outcome}} is roughly what I need.",
+  "This outcome is exactly what I want. {{outcome}} is precisely what I am trying to achieve."
+ ],
+ "believability": [
+  "I do not believe they can deliver this in {{timeline}}. It reads as fantasy and there is no evidence behind it.",
+  "I am skeptical this can be delivered as described. Too much of it is unproven for me to believe it.",
+  "It might be deliverable as described, but I cannot tell from what is in front of me.",
+  "I can see how they would deliver this as described. It is plausible to me.",
+  "I am confident they can deliver exactly this, in that timeframe, as described."
+ ],
+ "time_tolerance": [
+  "The {{timeline}} timeline does not work for me. It is either far too long or suspiciously fast.",
+  "The {{timeline}} timeline is a problem for me. It does not fit how I actually operate.",
+  "The {{timeline}} timeline is borderline for me. I would have to think about whether it fits.",
+  "The {{timeline}} timeline works for my situation. That pace fits how I operate.",
+  "The {{timeline}} timeline is exactly right for me. That is realistic and well matched to what I need."
+ ],
+ "effort_acceptance": [
+  "What this asks of me beyond money is unacceptable. The time and access required are more than I will give.",
+  "What this asks of me beyond money is too much. The demands on my time and attention are too high.",
+  "What this asks of me beyond money is unclear. I would need to know more about what is required of me.",
+  "What this asks of me beyond money is manageable. The time and access required are a fair trade.",
+  "What this asks of me beyond money is minimal. The effort required of me is small and clearly worth it."
+ ]
+}

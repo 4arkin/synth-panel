@@ -168,13 +168,14 @@ def cmd_panel(args):
     embedding = cfg.get("embedding", {})
     has_embedding = bool(embedding.get("endpoint") and embedding.get("model"))
     if not rated or spec["anchor_state"] == "none":
-        mode = "qualitative (no validated anchors ship for this scenario)"
+        mode = "qualitative (no anchor set ships for this scenario)"
     elif not has_embedding:
         mode = "qualitative (no embedding provider configured)"
     elif spec["anchor_state"] == "templated":
-        mode = "SSR — anchors TEMPLATED, fill them from the stimulus; derived, not validated"
+        mode = "SSR — anchors TEMPLATED; fill from the stimulus, then nobody has checked them"
     else:
-        mode = "SSR ({}, validated anchors)".format(args.scenario)
+        mode = "SSR ({}, checked anchors — see docs/anchors.md on what that is worth)".format(
+            args.scenario)
 
     state = "Panel: {} personas · fidelity: {} · rating: {}".format(
         len(roster), personas.fidelity(roster), mode)
@@ -273,7 +274,7 @@ def cmd_rate(args):
     print()
 
     if payload["anchor_state"] == "templated":
-        print("\nThese anchors are DERIVED from a validated set, not validated themselves.",
+        print("\nThese anchors were filled in from a template and nobody has checked them.",
               file=sys.stderr)
         print("Say so when you report the distributions.", file=sys.stderr)
     for slug, axis in bimodal:

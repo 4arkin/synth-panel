@@ -18,8 +18,9 @@ the stopped-at line tells you which sentence did it.
 
 ## Anchors
 
-`anchors/anchors-ad-and-page-resonance.json`. Validated at +0.70 / +0.74 across two runs — passing, and the
-least stable of the sets that passed. Treat its distributions as coarser than the concept-screening ones.
+`anchors/anchors-ad-and-page-resonance.json`. Checked twice, and the least stable set in the repo — the two
+runs disagreed with each other by a wide margin. Treat its distributions as coarser than the
+concept-screening ones, and read `docs/anchors.md` before leaning on either.
 
 ## Return
 
@@ -34,7 +35,7 @@ The orchestrator reads this block. The prose above is for you.
  "scenario": "ad-and-page-resonance",
  "instrument": "panel",
  "anchors": "anchors-ad-and-page-resonance.json",
- "anchor_state": "validated",
+ "anchor_state": "checked",
  "per_item": "variant",
  "verdicts": [
   "would act",

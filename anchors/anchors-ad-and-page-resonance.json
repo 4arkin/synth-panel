@@ -1,13 +1,17 @@
-{"_provenance": "would_keep_reading and would_act are the anchor sets validated at rho +0.70 / +0.74 across two runs, 2026-08-18 — the least stable of the passing sets. They contain no stimulus vocabulary, so they transfer unchanged. would_trust has no validated set and is collected as free text — see docs/anchors.md.",
-"would_keep_reading":[
- "I would scroll past this at the first line. It would not hold me at all.",
- "I would read a line or two of this and then scroll past it.",
- "I would read about half of this before losing interest.",
- "I would read this the whole way through.",
- "I would read all of this and save it to come back to."],
-"would_act":[
- "This does not make me want to comment, share or message the author at all.",
- "This barely makes me want to engage. I would not comment or share it.",
- "This might make me engage, but probably I would just keep scrolling.",
- "This makes me want to engage with the author about it.",
- "This makes me want to comment or message the author specifically about this."]}
+{
+ "_provenance": "would_keep_reading and would_act name no specific stimulus, so this wording carries over unchanged. Checked twice against a model referee, and the two runs disagreed with each other by a wide margin — this is the least stable set in the repo. No human graded it. would_trust has no anchor set and is collected as free text.",
+ "would_keep_reading": [
+  "I would scroll past this at the first line. It would not hold me at all.",
+  "I would read a line or two of this and then scroll past it.",
+  "I would read about half of this before losing interest.",
+  "I would read this the whole way through.",
+  "I would read all of this and save it to come back to."
+ ],
+ "would_act": [
+  "This does not make me want to comment, share or message the author at all.",
+  "This barely makes me want to engage. I would not comment or share it.",
+  "This might make me engage, but probably I would just keep scrolling.",
+  "This makes me want to engage with the author about it.",
+  "This makes me want to comment or message the author specifically about this."
+ ]
+}

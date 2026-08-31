@@ -17,16 +17,16 @@ Their answer is what your packaging actually communicates, as opposed to what it
 ## No anchors ship for this scenario
 
 `would_pick` is a forced choice between options, not a position on a 1–5 scale, so SSR has nothing to
-rate — the answer is a name, and the ranking comes from counting names. `would_shortlist` has no validated
-anchor set. Report the count and the split.
+rate — the answer is a name, and the ranking comes from counting names. `would_shortlist` has no anchor
+set. Report the count and the split.
 
 ## Why this scenario exists
 
 It absorbs the request this tool refuses. "Rate my copy / brand / voice" asks the method to score a
-property of the artifact, which it cannot do — measured: *differentiation* +0.08, *voice-fit* −0.13,
-*self-recognition* −0.63, actively inverted. Reframed as "which would you pick, and what did you think it
-was for", the same judgement comes back through behaviour, where the method works. Redirect here and say
-you did.
+property of the artifact, which it cannot do. In a small internal check, every artifact-property axis
+failed and *self-recognition* — "does this sound like a real person" — came out actively inverted, scoring
+backwards. Reframed as "which would you pick, and what did you think it was for", the same judgement comes
+back through behaviour, where the method works. Redirect here and say you did.
 
 ## Return
 

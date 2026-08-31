@@ -26,7 +26,7 @@ two modes instead. **When it fires, report both modes in words** — "wants the 
 `anchors/anchors-offer-pricing.json` is **templated**. Fill `{{outcome}}` and `{{timeline}}` from the offer's
 own words, in the same register at all five scale points. Anchors whose positive end echoes the offer's
 vocabulary while the negative end does not will score skeptics as enthusiasts — measured, not theoretical.
-A filled set is derived, not validated. Say so in the output.
+Once you fill it, nobody has checked it — including us. Say so in the output.
 
 ## Return
 

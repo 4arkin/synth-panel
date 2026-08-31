@@ -12,8 +12,7 @@
 
 ## No anchors ship for this scenario
 
-There is no validated anchor set for these axes, so nothing here is scored and no distribution is
-reported. That is a stated limit, not a defect — a made-up anchor set produces a confident number with
+There is no anchor set for these axes, so nothing here is scored and no distribution is reported. That is a stated limit, not a defect — a made-up anchor set produces a confident number with
 no evidence behind it, which is worse than a ranked list of prose.
 
 You still get the output that matters: **the features personas rank oppositely.** A roadmap argument lives

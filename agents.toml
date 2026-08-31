@@ -7,9 +7,20 @@
 # if you verify one.
 #
 # entrypoint = the file that CLI reads on its own when it starts in a directory.
+#
+# EVERY DISPATCH IS BILLED TO YOU, on whatever account that CLI is logged into.
+# A panel of five personas is five separate calls. Pin a cheap model in the command
+# — the entries below do where the flags are known.
 
 [claude]
-command = ["claude", "-p"]
+# Personas do not need a frontier model, and they do not need tools. Pinning both
+# is a cost decision with measured numbers behind it — one persona, same prompt:
+#   claude -p                                    $0.2591  (default model)
+#   claude -p --model haiku                      $0.0538
+#   + --strict-mcp-config --disallowed-tools '*' $0.0369
+# Blocking tools is also an isolation win: a persona that cannot read a file cannot
+# accidentally read yours.
+command = ["claude", "-p", "--model", "haiku", "--strict-mcp-config", "--disallowed-tools", "*"]
 entrypoint = "CLAUDE.md"
 verified = true
 

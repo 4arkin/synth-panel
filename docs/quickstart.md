@@ -23,7 +23,7 @@ only external dependency in the repo, and it buys you ranking, not insight.
 | You have | What runs |
 |---|---|
 | an agent CLI | everything except distributions |
-| an agent CLI + an embedding provider | the above, plus ranked distributions on the validated scenarios |
+| an agent CLI + an embedding provider | the above, plus ranked distributions on the scenarios that ship with anchors |
 
 Any OpenAI-compatible `/embeddings` endpoint works; nothing is hard-coded to a vendor. A local Ollama
 satisfies it with no key and no bill. Configure it in `config.toml` under `[embedding]` and leave it empty

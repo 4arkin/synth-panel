@@ -17,8 +17,12 @@ within-persona spread rose on every axis — one of them by a factor of 7.8.
 Rate the respondent, not the thing. *Would you pay, would you keep reading, would you pick this one* — all
 work. *Is this differentiated, is this clear, does this sound like a real person* — all fail.
 
-Measured across nine axes: would-pay +0.86, would-keep-reading +0.75, believability +0.55 · comprehension
-+0.32, differentiation +0.08, voice-fit −0.13, self-recognition **−0.63, actively inverted**.
+Checked across nine axes in one small internal test. Every axis asking about the *respondent* tracked a
+referee's reading. Every axis asking about the *artifact* did not, and `self_recognition` — "does this
+sound like a real person" — came out **actively inverted**: the rater scored it backwards.
+
+That test was crude and small, and it is not evidence that the working axes are accurate. It is only
+evidence that the failing ones fail, which is the direction that matters here.
 
 The cause is structural. A critique of an artifact is dominated by the artifact's own vocabulary, so the
 speaker's stance becomes a rounding error in the embedding. It is not a wording problem and cannot be
@@ -29,10 +33,15 @@ becomes `packaging-choice` or `ad-and-page-resonance`. Refusing well is why the 
 
 ## 3 · Never emit an absolute number to the user
 
-Ranks, spreads, distributions and disagreement. Never "68% would buy". The published evidence is on
-*ranking recovery* — roughly 90% of human test–retest reliability across 57 concept surveys and 9,300 human
-responses (arXiv:2510.08338, PyMC Labs and Colgate-Palmolive). It is not evidence that a level transfers to
-a population, and this is B2B, where nobody has calibrated it against real humans at all.
+Ranks, spreads, distributions and disagreement. Never "68% would buy".
+
+The *published* evidence — which is somebody else's, properly peer-reviewed, and the reason this method is
+here at all — is on **ranking recovery**: roughly 90% of human test–retest reliability across 57 concept
+surveys and 9,300 human responses (arXiv:2510.08338, PyMC Labs and Colgate-Palmolive). That is consumer
+purchase intent. It is not evidence that a level transfers to a population, and it is not evidence about
+B2B, where nobody has calibrated any of this against real humans.
+
+Nothing measured *inside this repo* rises to that standard, and none of it was graded by a human.
 
 ## 4 · Never fabricate a persona
 
@@ -52,7 +61,7 @@ directory. One model playing five people in one context cannot disagree with its
 anything, and no prompt fixes that. `synthpanel/dispatch.py` owns this.
 
 **State the mode, every time.** Whether SSR ran or the panel was qualitative; whether the anchor set was
-validated, derived or absent; where each persona sits on the fidelity ladder. The label is part of the
+checked, filled-in but unchecked, or absent; where each persona sits on the fidelity ladder. The label is part of the
 output, not a footnote to it.
 
 ## What isolation does not cover

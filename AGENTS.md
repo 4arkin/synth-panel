@@ -77,15 +77,18 @@ cannot restore it with a prompt.
 
 ---
 
-## 4 · Rate — only if you can, only what is validated
+## 4 · Rate — only if you can, and only what has an anchor set
 
 If `[embedding]` is configured in `config.toml`, pipe each worker's `axes` object to `ssr/rate.py` with the
 scenario's anchor file. If it is not configured, **skip this step and run qualitatively** — verdicts,
 objections, the disagreement map and the stopped-at line all survive. You lose ranking, not insight.
 
-Before you use an anchor file, check its state in `docs/anchors.md`. Some ship validated, one ships
-templated and must be filled from the stimulus, and two scenarios ship with none at all. Never author a
-quick anchor set to fill a gap — see the two-run gate.
+Before you use an anchor file, check its state in `docs/anchors.md` — and read what "checked" means there,
+because it is weaker than it sounds. Some sets ship checked, one ships templated and must be filled from the
+stimulus, and two scenarios ship with none at all. Never author a quick anchor set to fill a gap.
+
+**Do not describe any rating in this repo as validated.** Nothing here has been graded by a human. Say
+where the anchors came from and let the reader weigh it.
 
 When `rate.py` returns `"bimodal": true`, `expected` is `null` on purpose. Report the two modes in words.
 
@@ -98,7 +101,7 @@ Build the disagreement map first. It is the output, not a section of it.
 Every report opens with a state line, and it is not optional:
 
 ```
-Panel: 4 personas · fidelity: hypothesis — grounded · rating: SSR (concept-screening, validated anchors)
+Panel: 4 personas · fidelity: hypothesis — grounded · rating: SSR (concept-screening, checked anchors)
 Panel: 3 personas · fidelity: evidence-anchored · rating: qualitative (no embedding provider configured)
 ```
 
