@@ -123,6 +123,16 @@ The method is published, not invented: **arXiv:2510.08338**, PyMC Labs and Colga
 codebase's own prompts. A `5` never appeared once. 85% of the scores were 2 or 3. A third of the
 persona-axis cells returned the *identical* integer across eight independent samples.
 
+### How the panel is built
+
+The generator extracts personas as roles in a buying decision, not as demographics. It finds who
+benefits, who pays, who blocks, who the incumbent serves, and who already left. Then it derives the rest
+of the room from the one person that it found clearly.
+
+Both operations come from *Scaling Synthetic Data Creation with 1,000,000,000 Personas*,
+**arXiv:2406.20094**, Tencent AI Lab. Their dataset is not bundled here, and `docs/generator.md` says
+why.
+
 ### Independence is structural
 
 Each persona runs in **its own process**, with its own empty working directory. The personas cannot see
