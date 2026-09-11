@@ -17,8 +17,8 @@
  "_checked": {
   "passed": false,
   "runs": [
-   0.468,
-   0.306
+   0.683,
+   0.243
   ],
   "gate": 0.7,
   "checked_at": "2026-09-01"

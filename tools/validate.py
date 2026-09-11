@@ -33,6 +33,7 @@ import argparse
 import json
 import math
 import os
+import shlex
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -125,8 +126,15 @@ def elicit(cfg, roster, spec, stimulus, reps):
     return cells, dropped
 
 
-def referee(cfg, cells, references, questions):
-    """Score the same answers with a model shown the same five reference statements."""
+def referee(cfg, cells, references, questions, command=None, prompt_via=None):
+    """Score the same answers with a model shown the same five reference statements.
+
+    The referee defaults to the same command the personas run on, which is the
+    honest default — it needs no second account. But a referee that reads stance
+    poorly caps every correlation measured against it, and that ceiling is
+    indistinguishable from a rater that does not work. --referee-command exists
+    to tell those two apart.
+    """
     jobs = {}
     for index, (axis, prose) in enumerate(cells):
         options = "\n".join("{}. {}".format(i + 1, s) for i, s in enumerate(references[axis]))
@@ -134,10 +142,10 @@ def referee(cfg, cells, references, questions):
             question=questions.get(axis, axis), answer=prose.replace('"', "'"),
             options=options)
     results = dispatch.run_all(
-        cfg["dispatch"]["command"], jobs,
+        command or cfg["dispatch"]["command"], jobs,
         max_parallel=cfg["dispatch"].get("max_parallel", 5),
         timeout=cfg["dispatch"].get("timeout_seconds", 420),
-        prompt_via=cfg["dispatch"].get("prompt_via", "stdin"))
+        prompt_via=prompt_via or cfg["dispatch"].get("prompt_via", "stdin"))
     scores = {}
     for label, result in results.items():
         parsed = dispatch.extract_json(result["stdout"]) or {}
@@ -147,7 +155,8 @@ def referee(cfg, cells, references, questions):
     return scores
 
 
-def one_run(cfg, rater, roster, spec, stimulus, references, questions, reps):
+def one_run(cfg, rater, roster, spec, stimulus, references, questions, reps,
+            referee_command=None, referee_prompt_via=None):
     cells, dropped = elicit(cfg, roster, spec, stimulus, reps)
     cells = [(axis, prose) for axis, prose in cells if axis in references]
     if not cells:
@@ -174,7 +183,8 @@ def one_run(cfg, rater, roster, spec, stimulus, references, questions, reps):
             # toward the answers that happened to be single-stance.
             ssr[index] = sum((k + 1) * p for k, p in enumerate(result["pmf"]))
 
-    ref = referee(cfg, cells, references, questions)
+    ref = referee(cfg, cells, references, questions,
+                  command=referee_command, prompt_via=referee_prompt_via)
     paired = sorted(set(ssr) & set(ref))
     if len(paired) < 3:
         return None, "only {} cells scored by both raters".format(len(paired))
@@ -206,10 +216,20 @@ def main():
                              "outsider persona whether something maps to a job they are "
                              "doing produces a critique of the artifact, which this "
                              "method cannot rate.")
+    parser.add_argument("--referee-command",
+                        help="run the referee on a different command than the personas, "
+                             "quoted as one shell string. The referee is the yardstick: if "
+                             "it reads stance no better than the personas do, it caps the "
+                             "correlation and a working rater still fails. Vary it to find "
+                             "out. Default: the dispatch command.")
+    parser.add_argument("--referee-prompt-via", choices=("stdin", "arg"),
+                        help="how --referee-command takes its prompt. Default: the "
+                             "dispatch setting.")
     parser.add_argument("--yes", action="store_true", help="skip the cost confirmation")
     args = parser.parse_args()
 
     cfg = config.load()
+    referee_command = shlex.split(args.referee_command) if args.referee_command else None
     if not cfg["dispatch"]["command"]:
         sys.exit("No dispatch command. Run `synth-panel detect` first.")
     spec = prompt.scenario(args.scenario)
@@ -254,6 +274,9 @@ def main():
     print("personas   : {} from {}{}".format(
         args.size, os.path.relpath(directory, config.ROOT),
         "  (a worked example, not your buyers)" if is_example else ""))
+    if referee_command:
+        print("referee    : {}  (not the persona command — the yardstick is the "
+              "variable)".format(" ".join(referee_command)))
     print("plan       : {} runs x ({} answers + {} referee calls)".format(
         args.runs, workers, workers * len(references)))
     print("dispatches : ~{} agent calls (subscription usage, or credits if your CLI".format(calls))
@@ -273,7 +296,9 @@ def main():
     for run_index in range(args.runs):
         roster, _ = compose.compose(pool, size=args.size, record=False, seed=run_index)
         print("\nrun {} · {}".format(run_index + 1, ", ".join(p["slug"] for p in roster)))
-        result, error = one_run(cfg, rater, roster, spec, stimulus, references, questions, args.reps)
+        result, error = one_run(cfg, rater, roster, spec, stimulus, references, questions,
+                                args.reps, referee_command=referee_command,
+                                referee_prompt_via=args.referee_prompt_via)
         if error:
             print("  failed: {}".format(error))
             outcomes.append(None)
