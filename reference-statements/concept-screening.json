@@ -1,0 +1,17 @@
+{
+ "_provenance": "A starting set with generic wording: it names no specific product, so it carries over to your concepts unchanged. State: unchecked. To score with it, clear two runs of tools/validate.py on your own material and set reference_state to \"checked\" in the scenario file. would_switch has no reference set and is collected as free text.",
+ "jtbd_fit": [
+  "This maps to no job I am trying to do. It is irrelevant to my work.",
+  "This maps only loosely to a job I have. It is not one I am actively trying to do.",
+  "This maps partly to a job I have, though not one near the top of my list.",
+  "This maps to a job I am actively trying to do.",
+  "This is exactly the job I have. It maps precisely to what I am actively trying to do."
+ ],
+ "would_pay": [
+  "I would not pay for this at that price. No money would change hands.",
+  "I would probably not pay for this at that price.",
+  "I might pay for this at that price, but I would need more before deciding.",
+  "I would pay for this at that price.",
+  "I would pay for this immediately at that price. Take my money."
+ ]
+}

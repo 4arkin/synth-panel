@@ -1,0 +1,461 @@
+#!/usr/bin/env python3
+"""synth-panel — dispatch, detect, doctor.
+
+The orchestration lives in AGENTS.md and is run by your agent. This CLI owns the
+parts that must not be left to a language model: finding your agent CLI, proving
+it works, and launching one subprocess per persona.
+"""
+import argparse
+import json
+import os
+import sys
+import time
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from synthpanel import compose, config, detect, dispatch, generate, personas, prompt  # noqa: E402
+
+PROBE = ('Reply with nothing but this, in a fenced json block: '
+         '{"ok": true}')
+
+
+def cmd_detect(args):
+    results, chosen = detect.install()
+    if not results:
+        print("No known agent CLI found on PATH.")
+        print("Set [dispatch].command in config.toml by hand — any CLI that reads a")
+        print("prompt on stdin and writes the answer to stdout will work.")
+        return 1
+    for entry in results:
+        mark = "<- using" if entry["cli"] == chosen["cli"] else ""
+        tuned = "tuned" if entry["tuned"] else "default"
+        print("  {:<14} {:<26} {:<12} {:<6} {:<8} {}".format(
+            entry["cli"], entry["action"], entry["entrypoint"] or "",
+            entry["prompt_via"], tuned, mark))
+    print()
+    print("dispatch command: {}".format(" ".join(chosen["command"])))
+    print("written to config.local.toml")
+    if len(results) > 1:
+        print()
+        print("Several CLIs found. The first one alphabetically is in use.")
+        print("To use another, put its command in config.local.toml:")
+        for entry in results:
+            if entry["cli"] != chosen["cli"]:
+                print('  [dispatch]\n  command = [{}]'.format(
+                    ", ".join('"{}"'.format(c) for c in entry["command"])))
+    if not chosen["tuned"]:
+        print()
+        print("{} runs on its default model. A five-persona panel is five calls.".format(
+            chosen["cli"]))
+        print("To make panels cheaper, add the flag that selects a small model to")
+        print("[dispatch].command in config.local.toml.")
+    return 0
+
+
+def cmd_doctor(args):
+    cfg = config.load()
+    command = cfg["dispatch"]["command"]
+    print("dispatch command : {}".format(" ".join(command) if command else "(unset)"))
+    if not command:
+        print("\nNothing configured. Run `synth-panel detect`.")
+        return 1
+    print("probing          : one subprocess, empty working directory ...")
+    try:
+        result = dispatch.run_one(command, PROBE, timeout=args.timeout,
+                                  prompt_via=cfg["dispatch"].get("prompt_via", "stdin"))
+    except dispatch.DispatchError as exc:
+        print("\nFAIL  {}".format(exc))
+        return 1
+    parsed = dispatch.extract_json(result["stdout"])
+    if result["ok"] and parsed and parsed.get("ok") is True:
+        print("dispatch         : PASS ({}s)".format(result["seconds"]))
+    else:
+        print("dispatch         : FAIL (exit {}, {}s)".format(
+            result["returncode"], result["seconds"]))
+        print("  stdout: {}".format(result["stdout"][:400].strip() or "(empty)"))
+        print("  stderr: {}".format(result["stderr"][:400].strip() or "(empty)"))
+        print("\nFix [dispatch].command in config.local.toml. It must accept a prompt")
+        print("(on stdin, or as the last argument with prompt_via = \"arg\") and write")
+        print("the answer to stdout.")
+        return 1
+
+    embedding = cfg.get("embedding", {})
+    if embedding.get("endpoint") and embedding.get("model"):
+        key_env = embedding.get("api_key_env") or ""
+        has_key = bool(key_env and os.environ.get(key_env))
+        print("embedding        : {} / {} · key {}".format(
+            embedding["endpoint"], embedding["model"],
+            "from ${}".format(key_env) if has_key else "none (fine for a local endpoint)"))
+        print("rating mode      : scoring available, on a reference set that passed the gate")
+    else:
+        print("embedding        : not configured (optional)")
+        print("rating mode      : qualitative — verdict counts, objections and the")
+        print("                   disagreement map")
+    return 0
+
+
+def cmd_run(args):
+    """Dispatch pre-assembled worker prompts. Your agent assembles them; this launches them."""
+    cfg = config.load()
+    command = cfg["dispatch"]["command"]
+    payload = json.load(open(args.prompts) if args.prompts != "-" else sys.stdin)
+    if not isinstance(payload, dict) or not payload:
+        print("Expected a JSON object of {persona_slug: prompt}.", file=sys.stderr)
+        return 2
+    results = dispatch.run_all(
+        command, payload,
+        max_parallel=cfg["dispatch"].get("max_parallel", 5),
+        timeout=args.timeout or cfg["dispatch"].get("timeout_seconds", 420),
+        prompt_via=cfg["dispatch"].get("prompt_via", "stdin"))
+    out = {}
+    for slug, result in results.items():
+        out[slug] = {
+            "ok": result["ok"],
+            "seconds": result["seconds"],
+            "parsed": dispatch.extract_json(result["stdout"]),
+            "raw": result["stdout"],
+            "stderr": result["stderr"],
+        }
+    json.dump(out, sys.stdout, indent=1, ensure_ascii=False)
+    print()
+    failed = [s for s, r in out.items() if not r["ok"] or r["parsed"] is None]
+    if failed:
+        print("unparsed or failed: {}".format(", ".join(sorted(failed))), file=sys.stderr)
+    return 0
+
+
+def cmd_personas(args):
+    directory, is_example = personas.pool_dir(use_examples=args.examples)
+    pool = personas.load_dir(directory)
+    if not pool:
+        print("No personas. Build them first — see docs/generator.md and AGENTS.md step 3.")
+        print("To see the shape one takes: synth-panel personas --examples")
+        return 1
+    if is_example:
+        print("Showing the worked example in examples/personas/ — personas/ is empty.")
+        print("Build your own panel before you judge your own work: AGENTS.md step 3.\n")
+    for p in pool:
+        flag = "skeptic" if p["is_skeptic"] else "       "
+        broken = "  MISSING: " + ", ".join(p["missing"]) if p["missing"] else ""
+        print("  {:<28} {:<18} {}/10  {}{}".format(
+            p["slug"], p.get("cluster", "?"), p["skepticism"], flag, broken))
+    print("\n{} personas · {} skeptics · {} roles · fidelity: {}".format(
+        len(pool), sum(p["is_skeptic"] for p in pool),
+        len({p.get("cluster") for p in pool}), personas.fidelity(pool)))
+    if not any(p["is_skeptic"] for p in pool):
+        print("\nWARNING: no skeptic in the pool. Add one persona with skepticism 7 or")
+        print("more, so that a yes from this panel means something.")
+    return 0
+
+
+def cmd_panel(args):
+    cfg = config.load()
+    try:
+        spec = prompt.scenario(args.scenario)
+    except (FileNotFoundError, ValueError) as exc:
+        print(exc, file=sys.stderr)
+        return 2
+
+    directory, is_example = personas.pool_dir(use_examples=args.examples)
+    pool = personas.load_dir(directory)
+    if not pool:
+        print("No personas in personas/. Build them first — AGENTS.md step 3.", file=sys.stderr)
+        print("To try a run on the worked example: add --examples.", file=sys.stderr)
+        return 1
+    broken = [p for p in pool if p["missing"]]
+    if broken:
+        for p in broken:
+            print("persona {} is missing: {}".format(p["slug"], ", ".join(p["missing"])),
+                  file=sys.stderr)
+        return 1
+
+    with open(args.stimulus, encoding="utf-8") as fh:
+        stimulus = fh.read().strip()
+
+    roster, notes = compose.compose(
+        pool, size=args.size, include=args.include or (), exclude=args.exclude or (),
+        record=not args.dry_run)
+    prompts = prompt.build_all(roster, spec, stimulus)
+
+    rated = [a["key"] for a in spec["axes"] if a["rated"]]
+    embedding = cfg.get("embedding", {})
+    has_embedding = bool(embedding.get("endpoint") and embedding.get("model"))
+    gen_refs, gen_path = generate.load(args.scenario, stimulus)
+    gate = generate.checked(args.scenario, stimulus)
+    gen_ok = bool(gen_refs and gate and gate.get("passed"))
+    if not rated or spec["reference_state"] == "none":
+        mode = "qualitative"
+    elif gen_ok and has_embedding:
+        mode = "SSR — reference statements written for THIS stimulus and gate-checked ({})".format(
+            ", ".join("{:+.2f}".format(r) for r in gate["runs"] if r is not None))
+    elif gen_refs and not gate:
+        mode = ("qualitative (a reference set is written for this stimulus; "
+                "run tools/validate.py to turn scoring on)")
+    elif gen_refs and gate and not gate.get("passed"):
+        mode = "qualitative (the reference set for this stimulus has not cleared the gate)"
+    elif spec["reference_state"] == "unchecked":
+        mode = "qualitative (scoring is opt-in: docs/reference-statements.md)"
+    elif spec["reference_state"] == "templated":
+        mode = "qualitative (scoring is opt-in: docs/reference-statements.md)"
+    elif not has_embedding:
+        mode = "qualitative (scoring needs an embedding endpoint in config.toml)"
+    else:
+        mode = "SSR ({}, reference statements checked on this installation)".format(
+            args.scenario)
+
+    state = "Panel: {} personas · fidelity: {} · rating: {}".format(
+        len(roster), personas.fidelity(roster), mode)
+    print(state, file=sys.stderr)
+    print("Roster: " + ", ".join(p["slug"] for p in roster), file=sys.stderr)
+    if is_example:
+        print("SOURCE: examples/personas — the worked example. Build your own panel "
+              "for your own work.", file=sys.stderr)
+    for note in notes:
+        print("note: " + note, file=sys.stderr)
+
+    if args.dry_run:
+        json.dump({"state": state, "roster": [p["slug"] for p in roster],
+                   "prompts": prompts}, sys.stdout, indent=1, ensure_ascii=False)
+        print()
+        return 0
+
+    results = dispatch.run_all(
+        cfg["dispatch"]["command"], prompts,
+        max_parallel=cfg["dispatch"].get("max_parallel", 5),
+        timeout=args.timeout or cfg["dispatch"].get("timeout_seconds", 420),
+        prompt_via=cfg["dispatch"].get("prompt_via", "stdin"))
+
+    run_dir = os.path.join(config.ROOT, "runs", time.strftime("%Y%m%d-%H%M%S"))
+    os.makedirs(run_dir, exist_ok=True)
+    workers = {}
+    for slug, result in results.items():
+        parsed = dispatch.extract_json(result["stdout"])
+        workers[slug] = {"ok": result["ok"], "seconds": result["seconds"],
+                         "parsed": parsed, "raw": result["stdout"]}
+        with open(os.path.join(run_dir, slug + ".txt"), "w", encoding="utf-8") as fh:
+            fh.write(result["stdout"])
+
+    payload = {"state": state, "scenario": args.scenario,
+               "generated_references": os.path.relpath(gen_path, config.ROOT) if gen_ok else None,
+               "stimulus_fingerprint": generate.fingerprint(args.scenario, stimulus),
+               "reference_state": spec["reference_state"], "reference_statements": spec["reference_statements"],
+               "rated_axes": rated, "fidelity": personas.fidelity(roster),
+               "example_pool": is_example, "notes": notes,
+               "run_dir": os.path.relpath(run_dir, config.ROOT), "workers": workers}
+    with open(os.path.join(run_dir, "run.json"), "w", encoding="utf-8") as fh:
+        json.dump(payload, fh, indent=1, ensure_ascii=False)
+    json.dump(payload, sys.stdout, indent=1, ensure_ascii=False)
+    print()
+
+    failed = [s for s, w in workers.items() if not w["ok"] or w["parsed"] is None]
+    if failed:
+        print("unparsed or failed: {}".format(", ".join(sorted(failed))), file=sys.stderr)
+    return 0
+
+
+def cmd_rate(args):
+    """Turn a finished run's prose into distributions. Optional by design."""
+    cfg = config.load()
+    embedding = cfg.get("embedding", {})
+    if not (embedding.get("endpoint") and embedding.get("model")):
+        print("No embedding provider in config.toml. Scoring is optional: the run you", file=sys.stderr)
+        print("have already holds the verdicts, the objections and the disagreement map.", file=sys.stderr)
+        return 1
+
+    run_path = os.path.join(args.run_dir, "run.json")
+    with open(run_path, encoding="utf-8") as fh:
+        payload = json.load(fh)
+    if "reference_statements" not in payload and "anchors" in payload:
+        print("This run predates the rename from 'anchors' to 'reference statements'.",
+              file=sys.stderr)
+        print("Re-run the panel; a stale run cannot be rated against the current files.",
+              file=sys.stderr)
+        return 1
+    if not payload.get("reference_statements"):
+        print("Scenario '{}' has no reference statements — it is qualitative by design.".format(
+            payload["scenario"]), file=sys.stderr)
+        return 1
+
+    generated = payload.get("generated_references")
+    if generated:
+        gen_path = os.path.join(config.ROOT, generated)
+        with open(gen_path, encoding="utf-8") as fh:
+            data = json.load(fh)
+        stamp = data.get("_checked") or {}
+        if not stamp.get("passed") and not args.force:
+            print("The set written for this stimulus has not cleared the gate.", file=sys.stderr)
+            print("  python3 tools/validate.py --scenario {} --stimulus <yours>".format(
+                payload["scenario"]), file=sys.stderr)
+            return 1
+        references = {k: v for k, v in data.items() if not k.startswith("_")}
+        rate_source = "{} (written for this stimulus, gate {})".format(
+            generated, ", ".join("{:+.2f}".format(r) for r in stamp.get("runs", []) if r is not None))
+        return _rate_with(cfg, payload, references, run_path, rate_source, args)
+
+    reference_path = os.path.join(config.ROOT, "reference-statements", payload["reference_statements"])
+    with open(reference_path, encoding="utf-8") as fh:
+        raw = fh.read()
+    if "{{" in raw and not args.force:
+        print("{} still has unfilled placeholders.".format(payload["reference_statements"]), file=sys.stderr)
+        print("Fill them from the stimulus, in the stimulus's own words, identically", file=sys.stderr)
+        print("across all five statements of an axis. Or let the tool write the set:", file=sys.stderr)
+        print("  python3 bin/synth-panel references --scenario {} --stimulus <yours>".format(
+            payload["scenario"]), file=sys.stderr)
+        print("See docs/reference-statements.md.", file=sys.stderr)
+        return 1
+
+    if payload["reference_state"] != "checked" and not args.force:
+        print("Reference statements for '{}' have not cleared the gate on this "
+              "installation.".format(payload["scenario"]), file=sys.stderr)
+        print("Scoring is gated per material. Run the gate on yours:", file=sys.stderr)
+        print("", file=sys.stderr)
+        print("  python3 tools/validate.py --scenario {} --stimulus <yours>".format(
+            payload["scenario"]), file=sys.stderr)
+        print("", file=sys.stderr)
+        print("When two runs pass, set reference_state to \"checked\" in the scenario", file=sys.stderr)
+        print("file. --force rates anyway, and the run records that it was forced.", file=sys.stderr)
+        return 1
+    references = {k: v for k, v in json.loads(raw).items() if not k.startswith("_")}
+    source = "{} ({}, shipped)".format(
+        payload["reference_statements"], payload["reference_state"])
+    return _rate_with(cfg, payload, references, run_path, source, args)
+
+
+def _rate_with(cfg, payload, references, run_path, source, args):
+    """Rate a finished run against one set of reference statements."""
+    embedding = cfg["embedding"]
+    os.environ.setdefault("SSR_EMBED_ENDPOINT", embedding["endpoint"])
+    os.environ.setdefault("SSR_EMBED_MODEL", embedding["model"])
+    os.environ.setdefault("SSR_EMBED_KEY_ENV", embedding.get("api_key_env") or "")
+    sys.path.insert(0, os.path.join(config.ROOT, "ssr"))
+    import importlib
+    rate_mod = importlib.import_module("rate")
+
+    bimodal = []
+    try:
+        _rate_workers(rate_mod, payload, references, bimodal)
+    except rate_mod.EmbeddingError as exc:
+        print(exc, file=sys.stderr)
+        return 1
+    payload["rating_mode"] = "SSR — {}{}".format(
+        source, ", FORCED past the gate" if args.force else "")
+    with open(run_path, "w", encoding="utf-8") as fh:
+        json.dump(payload, fh, indent=1, ensure_ascii=False)
+    json.dump(payload, sys.stdout, indent=1, ensure_ascii=False)
+    print()
+
+    for slug, axis in bimodal:
+        print("bimodal: {}.{} — expected is null on purpose. Report both modes in "
+              "words; the mean of a split distribution is not a reading.".format(slug, axis),
+              file=sys.stderr)
+    return 0
+
+
+def _rate_workers(rate_mod, payload, references, bimodal):
+    for slug, worker in payload["workers"].items():
+        axes = (worker.get("parsed") or {}).get("axes") or {}
+        prose = {k: v for k, v in axes.items() if k in references and isinstance(v, str)}
+        if not prose:
+            continue
+        worker["ratings"] = rate_mod.rate(prose, references)
+        for axis, result in worker["ratings"].items():
+            if result["bimodal"]:
+                bimodal.append((slug, axis))
+
+
+def cmd_references(args):
+    """Write reference statements in this stimulus's own vocabulary."""
+    try:
+        spec = prompt.scenario(args.scenario)
+    except (FileNotFoundError, ValueError) as exc:
+        print(exc, file=sys.stderr)
+        return 2
+    rated = [a["key"] for a in spec["axes"] if a["rated"]]
+    if not rated:
+        print("Scenario '{}' rates nothing — it is qualitative by design.".format(args.scenario),
+              file=sys.stderr)
+        return 1
+
+    with open(args.stimulus, encoding="utf-8") as fh:
+        stimulus = fh.read().strip()
+
+    existing, path = generate.load(args.scenario, stimulus)
+    if existing and not args.regenerate:
+        print("Already written for this exact stimulus:")
+        print("  {}".format(os.path.relpath(path, config.ROOT)))
+        print("  axes: {}".format(", ".join(sorted(existing))))
+        print("\nNext, run the gate on it:")
+        print("  python3 tools/validate.py --scenario {} --stimulus {}".format(
+            args.scenario, args.stimulus))
+        print("\n--regenerate writes a new one.")
+        return 0
+
+    print("Writing {} reference sets in this stimulus's vocabulary ...".format(len(rated)))
+    references, report = generate.generate(spec, stimulus)
+    for line in report:
+        print("  {}".format(line))
+    if not references:
+        print("\nNothing usable came back. Nothing written.", file=sys.stderr)
+        return 1
+    missing = [axis for axis in rated if axis not in references]
+    if missing:
+        print("\nNo usable set for: {}. Those axes stay free text.".format(", ".join(missing)))
+
+    path = generate.save(args.scenario, stimulus, references)
+    print("\nwritten: {}".format(os.path.relpath(path, config.ROOT)))
+    print("\nThe set is written in your stimulus's own vocabulary. Next, run the gate.")
+    print("Scoring turns on when two runs pass:")
+    print("  python3 tools/validate.py --scenario {} --stimulus {}".format(
+        args.scenario, args.stimulus))
+    return 0
+
+
+def main():
+    parser = argparse.ArgumentParser(prog="synth-panel", description=__doc__,
+                                     formatter_class=argparse.RawDescriptionHelpFormatter)
+    sub = parser.add_subparsers(dest="cmd", required=True)
+
+    sub.add_parser("detect", help="find agent CLIs on PATH and write their entrypoint files")
+
+    plist = sub.add_parser("personas", help="list and validate the persona pool")
+    plist.add_argument("--examples", action="store_true", help="show the worked example pool")
+
+    panel = sub.add_parser("panel", help="compose, assemble and dispatch a full panel")
+    panel.add_argument("--scenario", required=True)
+    panel.add_argument("--stimulus", required=True, help="file holding what the panel judges")
+    panel.add_argument("--size", type=int, default=None)
+    panel.add_argument("--include", action="append", help="force a persona in (repeatable)")
+    panel.add_argument("--exclude", action="append", help="keep a persona out (repeatable)")
+    panel.add_argument("--examples", action="store_true",
+                       help="run against the worked example pool instead of your own")
+    panel.add_argument("--dry-run", action="store_true",
+                       help="compose and assemble, print the prompts, dispatch nothing")
+    panel.add_argument("--timeout", type=int, default=None)
+
+    doctor = sub.add_parser("doctor", help="prove the dispatch command actually works")
+    doctor.add_argument("--timeout", type=int, default=120)
+
+    run = sub.add_parser("run", help="dispatch worker prompts, one subprocess each")
+    run.add_argument("prompts", help='JSON file of {slug: prompt}, or "-" for stdin')
+    run.add_argument("--timeout", type=int, default=None)
+
+    refs = sub.add_parser("references",
+                          help="write reference statements in your stimulus's own vocabulary")
+    refs.add_argument("--scenario", required=True)
+    refs.add_argument("--stimulus", required=True)
+    refs.add_argument("--regenerate", action="store_true",
+                      help="overwrite the set already written for this stimulus")
+
+    rate = sub.add_parser("rate", help="rate a finished run's prose into distributions")
+    rate.add_argument("run_dir")
+    rate.add_argument("--force", action="store_true",
+                      help="rate past the gate; the run records that it was forced")
+
+    args = parser.parse_args()
+    return {"detect": cmd_detect, "doctor": cmd_doctor, "run": cmd_run,
+            "personas": cmd_personas, "panel": cmd_panel,
+            "references": cmd_references, "rate": cmd_rate}[args.cmd](args)
+
+
+if __name__ == "__main__":
+    sys.exit(main())
