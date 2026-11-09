@@ -25,10 +25,7 @@ synth-panel gives your AI agent a panel of your own buyers. Your agent builds th
 
 ## See a run
 
-<!-- Video: drag assets/demo.mp4 into this README in the github.com editor. Replace the linked image below with the user-attachments URL that GitHub gives, so the video plays inline. -->
-<p align="center">
-  <a href="assets/demo.mp4"><img src="assets/demo-poster.png" width="880" alt="Play the video: a real concept screen, from three product ideas to the objection that nobody said out loud."></a>
-</p>
+https://github.com/user-attachments/assets/0508bd11-a346-4afb-8e73-71a23aef5e8d
 
 <p align="center"><sub>A real concept screen, from three product ideas to the objection that nobody said out loud.</sub></p>
 
