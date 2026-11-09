@@ -1,60 +1,55 @@
-# synth-panel
+<h1 align="center">synth-panel</h1>
 
-**A synthetic buyer panel that argues with your work before the market does.**
+<p align="center">
+  <strong>Test an idea, a price or a landing page on a panel of your own buyers before you ship it.</strong>
+</p>
 
-You build an app or a SaaS. You do not have the audience to test every idea, feature and message on real
-people. synth-panel gives your AI agent a panel of *your* buyers, and you test anything on them in
-minutes:
+<p align="center">
+  <img src="https://img.shields.io/badge/works%20with-Claude%20Code%20%C2%B7%20Codex%20%C2%B7%20Gemini%20CLI%20%C2%B7%20more-1B512D?style=flat-square" alt="Works with Claude Code, Codex, Gemini CLI and more">
+  <img src="https://img.shields.io/badge/API%20key-not%20needed-1B512D?style=flat-square" alt="No API key needed">
+  <img src="https://img.shields.io/badge/python-3-1B512D?style=flat-square" alt="Python 3">
+  <img src="https://img.shields.io/badge/license-MIT-1B512D?style=flat-square" alt="MIT license">
+</p>
 
-- an idea, before you build it
-- a feature backlog, to decide what comes next
-- a price or an offer
-- a landing page, an ad, an email, any message
-- a name, a tagline, a pricing plan
-- a launch plan, before you launch
-- the same product in two markets, side by side
+<p align="center">
+  <img src="assets/hero.png" width="880" alt="A real concept screen. You ask your agent to run a concept screen on three ideas. The answer: exit interview, 3 of 4 picks. Call-to-copy, 1 of 4. Launch plan, 0 of 4. The split: the CFO picked the exit interview, the founder picked call-to-copy. An objection from the head of marketing: ex-customers rarely answer surveys. What nobody said out loud, from the marketing manager: couldn't a founder just read the cancel emails herself and skip paying for this?">
+</p>
 
-It works for consumer apps and for B2B buying committees. You get a ranking, the reasons behind it, and
-the objection that nobody says to your face.
+You build an app or a SaaS, and you have no audience to test every idea on. Ask one chatbot to play five buyers, and one model writes all five answers in one conversation. Those five cannot disagree.
 
-**The method is published and measured against people.** In a study by PyMC Labs and Colgate-Palmolive,
-synthetic respondents reached about 90% of human test-retest reliability, across 57 product surveys and
-9,300 human responses ([arXiv:2510.08338](https://arxiv.org/abs/2510.08338)). synth-panel uses that
-elicitation method on your buyers. It runs each persona as a separate, isolated AI instance, so five
-personas give you five independent readings.
-
-You need no API key, no account and no marketing background.
+synth-panel gives your AI agent a panel of your own buyers. Your agent builds them from your project, as roles in one buying decision. Each buyer runs as a separate AI, in its own empty folder, and cannot see the others. So the buyers can disagree, and the report shows you where.
 
 > **AI agents:** read [`AGENTS.md`](AGENTS.md). It is the complete protocol.
 
 ---
 
-## Start with one message
+## See a run
 
-Open the project that you are building. Tell your AI agent:
+<!-- Video: drag assets/demo.mp4 into this README in the github.com editor. Replace the linked image below with the user-attachments URL that GitHub gives, so the video plays inline. -->
+<p align="center">
+  <a href="assets/demo.mp4"><img src="assets/demo-poster.png" width="880" alt="Play the video: a real concept screen, from three product ideas to the objection that nobody said out loud."></a>
+</p>
 
-```
-Clone https://github.com/4arkin/synth-panel and read its AGENTS.md.
-Then build a buyer panel for this project and test my landing page on it.
-```
+<p align="center"><sub>A real concept screen, from three product ideas to the objection that nobody said out loud.</sub></p>
 
-Your agent clones the repo, learns what you build from your own project, builds your buyer personas, runs
-each one in its own process, and gives you the report. In a trial on a new app project, a fresh agent
-went from this message to a finished panel run in under three minutes.
+## Before and after
 
-Then continue. Test the price. Rank the backlog. Interview a buyer. The panel is saved, and it rotates
-between runs, so a revised draft meets fresh readers.
+| | One chatbot plays five buyers | synth-panel |
+|---|---|---|
+| Who answers | One model writes every buyer in one conversation | Each buyer runs as a separate AI, in its own empty folder |
+| Who the buyers are | Generic personas | Roles in your buying decision: who benefits, pays, blocks or left |
+| How they answer | A score on a scale, which crowds the middle | Free text in the buyer's own voice. Scores are an option |
+| What you get | One average opinion | A ranking, the split by role, every objection word for word, a to-do |
 
-**Requirements:** Python 3 and an agent CLI. The repo is tested end to end on Claude Code. It ships
-dispatch settings for Codex, Gemini CLI, Cursor Agent, opencode, Amp and Crush, and `doctor` confirms
-yours in one command. Any other CLI that takes a prompt and prints an answer works with one line of
-configuration.
+## How it works
 
-Manual commands are in [`docs/quickstart.md`](docs/quickstart.md).
+<p align="center">
+  <img src="assets/how-it-works.png" width="880" alt="How a run works. 1, your agent reads your project. 2, it builds your buyers as roles in one buying decision: who benefits, who pays, who blocks, who the current tool serves, who already left. 3, it runs each persona alone, one process per persona, with an empty folder. 4, it reports the disagreement: a ranking by picks, the split by role, every objection word for word, and what to do this week.">
+</p>
 
----
+Your agent saves the panel. The panel rotates between runs, so a revised draft meets fresh readers. The method, the research behind it and every file you can tune are in [`docs/method.md`](docs/method.md).
 
-## What to ask
+## What you can test
 
 | You want to know | Tell your agent | You get |
 |---|---|---|
@@ -71,13 +66,10 @@ A **panel** judges something that you show it. An **interview** takes nothing fr
 buyer's vocabulary, which is the input your landing page needs. A **pre-mortem** takes a plan and tells
 you how it failed.
 
----
+<details>
+<summary><strong>Read the full report from the run above</strong></summary>
 
-## What comes back
-
-This is a real run. Three product ideas went in front of four personas from the worked example in
-`examples/personas/`: a bootstrapped founder, a head of marketing, a CFO and a marketing manager. Every
-quote is a persona's own words.
+This is a real run. Three product ideas went in front of four personas from the worked example in `examples/personas/`: a bootstrapped founder, a head of marketing, a CFO and a marketing manager. Every quote is a persona's own words.
 
 ```
 Panel: 4 personas · fidelity: hypothesis — grounded · rating: qualitative
@@ -115,103 +107,65 @@ DO THIS WEEK
    churn. Otherwise it's a newsletter."
 ```
 
-Each persona answered in about 20 seconds, on a small model.
+</details>
 
----
+## Built for, not built for
 
-## Why the panel works
+**Built for:** founders and teams who build an app or a SaaS, for consumer apps and for B2B buying committees. Test an idea, a backlog, a price, an offer, a page, a name or a launch plan before you ship it.
 
-**It stands on published research.** The study is *LLMs Reproduce Human Purchase Intent via Semantic
-Similarity Elicitation of Likert Ratings* ([arXiv:2510.08338](https://arxiv.org/abs/2510.08338)). Its
-method collects answers in free text, never as a number, and scores the text afterwards. A model that you
-ask for "4 out of 5" crowds the middle of the scale: in 96 direct integer scores on this repo's own
-prompts, a `5` never appeared once, and 85% of the scores were 2 or 3. Every panel here collects answers
-in free text, and the scoring step is included as an option.
+**Not built for:** a sales forecast, or a replacement for talks with real buyers. Every report states its level in the first line: `hypothesis — thin`, `hypothesis — grounded` or `evidence-anchored`. Real buyer sentences move a panel up that scale.
 
-**Each persona is isolated.** Each one runs in its own process, with its own empty working directory. It
-cannot see the other personas, your repo, or the agent's reasoning. Most "AI focus groups" use one model
-to act as five people in one conversation, and those five cannot disagree. Here they can, so their
-agreement is evidence.
+## Start with one message
 
-**The personas are your buyers.** The agent builds them from your product as roles in a buying decision:
-who benefits, who pays, who blocks, who the current solution serves, and who already left. From the one
-person that it finds clearly, it derives the rest of the room. Both operations come from *Scaling
-Synthetic Data Creation with 1,000,000,000 Personas* ([arXiv:2406.20094](https://arxiv.org/abs/2406.20094),
-Tencent AI Lab). See
-[`docs/generator.md`](docs/generator.md).
-
-**Every question is about the buyer.** *Would you pick this, would you keep reading, would you pay.* A
-persona answers those in the first person, in its own voice. If you ask "is my copy clear", the agent
-asks "which one would you pick, and what did you think it was for", and you get the same judgment through
-behavior.
-
-**The report is the disagreement.** Options are ranked by how many personas picked each one. The report
-names the strongest disagreement by role, quotes every objection word for word, and ends with what to do
-this week.
-
----
-
-## Make it sharper with real buyer language
-
-The agent starts from what your project already says. Real buyer sentences make the panel sharper, and
-every report states its level in the first line.
-
-| The panel is built from | Label on the report |
-|---|---|
-| a URL | `hypothesis — thin` |
-| your project, your answers to the agent's questions, a pitch deck, a pricing page | `hypothesis — grounded` |
-| things that real people said: call transcripts, support tickets, emails, reviews | `evidence-anchored` |
-
-**No customers yet?** Paste reviews of the product that your buyers use today, forum threads about the
-problem, the replies to your cold emails, or the message where someone told you no. One real sentence per
-persona moves that persona to `evidence-anchored`.
-
-The personas go into `personas/` as plain files. They are yours. Read them, correct them, and keep them
-for the next run.
-
----
-
-## Tune it
-
-Plain files control every part of the judgment. You can edit all of them.
-
-| File | What it controls |
-|---|---|
-| `personas/*.md` | who is on the panel |
-| `scenarios/*.md` | the questions for each kind of run |
-| `instruments/*.md` | the procedure for panel, interview and pre-mortem |
-| `prompts/worker.md` | what each persona sees |
-| `config.toml` | the agent CLI, the panel size, the rotation between runs |
-
-`examples/personas/` holds a complete worked panel of 18 personas, so that you can see the shape of a
-good one.
-
----
-
-## Scores
-
-Every panel reports picks, verdicts and words. A panel can also turn each written answer into a 1 to 5
-distribution with Semantic Similarity Rating (SSR), the scoring step from arXiv:2510.08338.
-
-Scoring is opt-in. You write a reference set in the vocabulary of your own material and pass it through
-a gate:
+Open the project that you are building. Tell your AI agent:
 
 ```
-python3 bin/synth-panel references --scenario concept-screening --stimulus ./ideas.md
-python3 tools/validate.py --scenario concept-screening --stimulus ./ideas.md
+Clone https://github.com/4arkin/synth-panel and read its AGENTS.md.
+Then build a buyer panel for this project and test my landing page on it.
 ```
 
-When the set passes two runs, scoring turns on for that material. You need an embedding endpoint in
-`config.toml`. A local one works and needs no key. See
-[`docs/reference-statements.md`](docs/reference-statements.md).
+Your agent clones the repo and learns what you build from your own project. Then it builds your buyer personas, runs each one in its own process, and gives you the report. Then continue: test the price, rank the backlog or interview a buyer.
 
----
+## Works with
 
-## Where it came from
+**Requirements:** Python 3 and an agent CLI. The repo is tested end to end on Claude Code. It ships
+dispatch settings for Codex, Gemini CLI, Cursor Agent, opencode, Amp and Crush, and `doctor` confirms
+yours in one command. Any other CLI that takes a prompt and prints an answer works with one line of
+configuration.
 
-I built this inside my own marketing brain, to judge offers and content before I publish. It killed three
-of my own ideas.
+You need no API key, no account and no marketing background. Manual commands are in [`docs/quickstart.md`](docs/quickstart.md).
 
-It is one piece of a larger setup. The pieces work alone, so this one is public.
+## FAQ
 
-Built by [Alex Charkin](https://alexcharkin.com). MIT licensed - fork it, tune it, ship it.
+**Is a synthetic panel not just invented answers?**
+Researchers published the method and measured it against people. In a study by PyMC Labs and Colgate-Palmolive, synthetic respondents reached about 90% of human test-retest reliability. The study used 57 product surveys and 9,300 human responses ([arXiv:2510.08338](https://arxiv.org/abs/2510.08338)).
+
+**Why not ask a chatbot to play five buyers?**
+One model in one conversation writes all five, so they cannot disagree. Here each persona runs in its own process. It cannot see the other personas, your repo or the agent's reasoning. So their agreement is evidence.
+
+**I have no customers yet. Where does the buyer language come from?**
+Paste reviews of the product that your buyers use today, forum threads about the problem, or the replies to your cold emails. One real sentence per persona moves that persona to `evidence-anchored`.
+
+**Can I get a score, not only words?**
+Yes, as an option. Semantic Similarity Rating turns each written answer into a 1 to 5 distribution. You write a reference set and pass it through a gate first. A local embedding endpoint works and needs no key.
+
+**Can I change the personas?**
+Yes. They are plain files in `personas/`. Read them, correct them and keep them for the next run. `examples/personas/` holds a complete worked panel.
+
+## Inside
+
+| Path | What |
+|---|---|
+| [`AGENTS.md`](AGENTS.md) | The protocol that your agent follows |
+| `personas/` | Your panel, as plain files |
+| [`scenarios/`](scenarios/) | The questions for each kind of run |
+| [`instruments/`](instruments/) | The procedure for panel, interview and pre-mortem |
+| [`prompts/worker.md`](prompts/worker.md) | What each persona sees |
+| [`config.toml`](config.toml) | The agent CLI, the panel size, the rotation between runs |
+| [`examples/personas/`](examples/personas/) | A complete worked panel |
+| [`docs/`](docs/) | Quickstart, method, persona generator, scoring |
+| `bin/`, `synthpanel/`, `ssr/`, `tools/` | The engine |
+
+## License
+
+MIT. See [`LICENSE`](LICENSE).
