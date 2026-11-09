@@ -69,7 +69,7 @@ you how it failed.
 <details>
 <summary><strong>Read the full report from the run above</strong></summary>
 
-This is a real run. Three product ideas went in front of four personas from the worked example in `examples/personas/`: a bootstrapped founder, a head of marketing, a CFO and a marketing manager. Every quote is a persona's own words.
+This is a real run. Three product ideas went in front of four personas from the worked example in `examples/personas/`. The four are a bootstrapped founder, a head of marketing, a CFO and a marketing manager. Every quote is a persona's own words.
 
 ```
 Panel: 4 personas · fidelity: hypothesis — grounded · rating: qualitative
@@ -115,7 +115,7 @@ DO THIS WEEK
 
 **Not built for:** a sales forecast, or a replacement for talks with real buyers. Every report states its level in the first line: `hypothesis — thin`, `hypothesis — grounded` or `evidence-anchored`. Real buyer sentences move a panel up that scale.
 
-## Start with one message
+## Install with one message
 
 Open the project that you are building. Tell your AI agent:
 
@@ -128,7 +128,7 @@ Your agent clones the repo and learns what you build from your own project. Then
 
 ## Works with
 
-**Requirements:** Python 3 and an agent CLI. The repo is tested end to end on Claude Code. It ships
+**Requirements:** Python 3 and an agent CLI. We tested the repo end to end on Claude Code. It ships
 dispatch settings for Codex, Gemini CLI, Cursor Agent, opencode, Amp and Crush, and `doctor` confirms
 yours in one command. Any other CLI that takes a prompt and prints an answer works with one line of
 configuration.
